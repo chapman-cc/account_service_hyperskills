@@ -5,8 +5,9 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/admin/user")
 public class ServiceController {
+
     @PutMapping("/role")
-    public void changeRole(){
+    public void changeRole() {
 
     }
 

@@ -1,23 +1,42 @@
 package account.controllers;
 
-import account.controllers.models.Employee;
+import account.exceptions.UserAlreadyExistsException;
+import account.models.Employee;
+import account.responses.SignupBodyNotValidResponse;
+import account.responses.UserExistsResponse;
+import account.services.EmployeeService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/auth")
 public class AuthenticationController {
+    private final EmployeeService service;
+
+    public AuthenticationController(EmployeeService employeeService) {
+        this.service = employeeService;
+    }
+
     @PostMapping("/signup")
     @ResponseStatus(HttpStatus.OK)
-    public Map<String, String> signUp(@Valid @RequestBody Employee employee) {
+    public Map<String, Object> signUp(@Valid @RequestBody Employee employee) {
+        Optional<Employee> found = service.findByEmail(employee.getEmail());
+        if (found.isPresent()) {
+            throw new UserAlreadyExistsException();
+        }
+
+        Employee registered = service.register(employee);
+
         return Map.of(
-                "name", employee.getName(),
-                "lastname", employee.getLastname(),
-                "email", employee.getEmail()
+                "id", registered.getId(),
+                "name", registered.getName(),
+                "lastname", registered.getLastname(),
+                "email", registered.getEmail()
         );
     }
 
@@ -26,9 +45,15 @@ public class AuthenticationController {
 
     }
 
-//    @ExceptionHandler(MethodArgumentNotValidException.class)
-//    @ResponseStatus(HttpStatus.BAD_REQUEST)
-//    public Map<String, String> handleValidationExceptions(MethodArgumentNotValidException ex) {
-//        return Map.of("error", ex.getMessage());
-//    }
+    @ExceptionHandler(UserAlreadyExistsException.class)
+    @ResponseStatus(value = HttpStatus.BAD_REQUEST)
+    public UserExistsResponse handleUserAlreadyExistsException(UserAlreadyExistsException e) {
+        return new UserExistsResponse("/api/auth/signup");
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    @ResponseStatus(value = HttpStatus.BAD_REQUEST)
+    public SignupBodyNotValidResponse handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
+        return new SignupBodyNotValidResponse("/api/auth/signup");
+    }
 }

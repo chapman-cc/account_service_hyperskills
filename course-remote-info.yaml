@@ -3,14 +3,14 @@ hyperskill_project:
   ide_files: https://cogniterra.org/media/attachments/lesson/26066/additional_files.json
   is_template_based: false
   use_ide: true
-update_date: "Tue, 09 Apr 2024 15:13:23 UTC"
+update_date: "Thu, 09 May 2024 20:39:12 UTC"
 stages:
   - id: 1086
     step: 16601
     is_completed: true
   - id: 1087
     step: 16602
-    is_completed: false
+    is_completed: true
   - id: 1088
     step: 16603
     is_completed: false
@@ -240,8 +240,6 @@ topics:
       theory_id: 9420
     - title: What are databases
       theory_id: 8497
-    - title: HTML basics
-      theory_id: 6434
     - title: Introduction to software architecture
       theory_id: 15368
     - title: Tags and Attributes
