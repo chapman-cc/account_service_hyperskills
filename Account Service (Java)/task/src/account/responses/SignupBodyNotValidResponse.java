@@ -1,11 +1,11 @@
 package account.responses;
 
-import org.springframework.http.HttpStatus;
-
 import java.time.LocalTime;
+
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 
 public record SignupBodyNotValidResponse(int status, String error, String path, LocalTime timestamp) {
     public SignupBodyNotValidResponse(String path) {
-        this(HttpStatus.BAD_REQUEST.value(), HttpStatus.BAD_REQUEST.getReasonPhrase(), path, LocalTime.now());
+        this(BAD_REQUEST.value(), BAD_REQUEST.getReasonPhrase(), path, LocalTime.now());
     }
 }

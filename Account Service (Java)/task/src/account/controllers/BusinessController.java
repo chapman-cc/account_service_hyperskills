@@ -1,6 +1,7 @@
 package account.controllers;
 
 import account.models.Employee;
+import account.responses.SignupResponse;
 import account.services.EmployeeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -8,7 +9,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -24,20 +24,16 @@ public class BusinessController {
 
     @GetMapping("/empl/payment")
     @ResponseStatus(HttpStatus.OK)
-    public Map<String, Object> getEmployeePayroll(@AuthenticationPrincipal UserDetails user) {
+    public SignupResponse getEmployeePayroll(@AuthenticationPrincipal UserDetails user) {
         Optional<Employee> optional = employeeService.findByEmail(user.getUsername());
 
         if (optional.isEmpty()) {
             throw new RuntimeException("Employee not found");
-
         }
 
         Employee employee = optional.get();
-        return Map.of(
-                "id", employee.getId(),
-                "name", employee.getName(),
-                "lastname", employee.getLastname(),
-                "email", employee.getEmail());
+
+        return new SignupResponse(employee.getId(), employee.getName(), employee.getLastname(), employee.getEmail());
     }
 
     @PostMapping("/acct/payments")

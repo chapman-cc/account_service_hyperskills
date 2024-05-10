@@ -3,6 +3,7 @@ package account.controllers;
 import account.exceptions.UserAlreadyExistsException;
 import account.models.Employee;
 import account.responses.SignupBodyNotValidResponse;
+import account.responses.SignupResponse;
 import account.responses.UserExistsResponse;
 import account.services.EmployeeService;
 import jakarta.validation.Valid;
@@ -10,7 +11,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -24,7 +24,7 @@ public class AuthenticationController {
 
     @PostMapping("/signup")
     @ResponseStatus(HttpStatus.OK)
-    public Map<String, Object> signUp(@Valid @RequestBody Employee employee) {
+    public SignupResponse signUp(@Valid @RequestBody Employee employee) {
         Optional<Employee> found = service.findByEmail(employee.getEmail());
         if (found.isPresent()) {
             throw new UserAlreadyExistsException();
@@ -32,11 +32,11 @@ public class AuthenticationController {
 
         Employee registered = service.register(employee);
 
-        return Map.of(
-                "id", registered.getId(),
-                "name", registered.getName(),
-                "lastname", registered.getLastname(),
-                "email", registered.getEmail()
+        return new SignupResponse(
+                registered.getId(),
+                registered.getName(),
+                registered.getLastname(),
+                registered.getEmail()
         );
     }
 
