@@ -1,5 +1,7 @@
 package account.services;
 
+import account.exceptions.BreachedPasswordDetectedException;
+import account.exceptions.PasswordNotChangedException;
 import account.models.Employee;
 import account.repositories.EmployeeRepository;
 import jakarta.transaction.Transactional;
@@ -14,10 +16,13 @@ public class EmployeeService {
     private final EmployeeRepository repo;
     private final PasswordEncoder encoder;
 
+    private final BreachedPasswordService breachedPasswordService;
+
     @Autowired
-    public EmployeeService(EmployeeRepository repo, PasswordEncoder encoder) {
+    public EmployeeService(EmployeeRepository repo, PasswordEncoder encoder, BreachedPasswordService breachedPasswordService) {
         this.repo = repo;
         this.encoder = encoder;
+        this.breachedPasswordService = breachedPasswordService;
     }
 
     public Optional<Employee> findByEmail(String email) {
@@ -27,12 +32,25 @@ public class EmployeeService {
     @Transactional
     public Employee register(Employee employee) {
         String password = employee.getPassword();
-        String encoded = encoder.encode(password);
-        employee.setPassword(encoded);
+        if (breachedPasswordService.check(password)) {
+            throw new BreachedPasswordDetectedException();
+        }
+        String encodedPassword = encoder.encode(password);
+        employee.setPassword(encodedPassword);
         if (employee.getRole() == null) {
             employee.setRole("USER");
         }
         return repo.save(employee);
+    }
+
+
+    public Employee updatePassword(String email, String password) {
+        Employee employee = findByEmail(email).orElseThrow(IllegalArgumentException::new);
+        if (encoder.matches(password, employee.getPassword())) {
+            throw new PasswordNotChangedException();
+        }
+        employee.setPassword(password);
+        return register(employee);
     }
 
 }

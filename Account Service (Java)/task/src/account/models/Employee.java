@@ -4,11 +4,14 @@ import account.utils.Regex;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.validator.constraints.Length;
 
 @Entity
 @NoArgsConstructor
+@AllArgsConstructor
 @Data
 @Table(name = "employees")
 public class Employee {
@@ -31,6 +34,7 @@ public class Employee {
     private String email;
 
     @NotBlank(message = "Password is mandatory")
+    @Length(min = 12, message = "Password is at least 13 letter long")
     @Column(name = "password")
     private String password;
 

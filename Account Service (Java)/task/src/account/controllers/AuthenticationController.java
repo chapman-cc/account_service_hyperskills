@@ -1,13 +1,21 @@
 package account.controllers;
 
+
+import account.dtos.BadRequestResponse;
+import account.dtos.NewPasswordDTO;
+import account.dtos.PasswordChangedResponse;
+import account.dtos.SignupResponse;
+import account.exceptions.BreachedPasswordDetectedException;
+import account.exceptions.PasswordNotChangedException;
 import account.exceptions.UserAlreadyExistsException;
 import account.models.Employee;
-import account.responses.SignupBodyNotValidResponse;
-import account.responses.SignupResponse;
-import account.responses.UserExistsResponse;
 import account.services.EmployeeService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
@@ -41,19 +49,28 @@ public class AuthenticationController {
     }
 
     @PostMapping("/changepass")
-    public void changePassword() {
-
+    @ResponseStatus(HttpStatus.OK)
+    public PasswordChangedResponse changePassword(@AuthenticationPrincipal UserDetails userDetails, @Valid @RequestBody NewPasswordDTO body) {
+        Employee updated = service.updatePassword(userDetails.getUsername(), body.getPassword());
+        return new PasswordChangedResponse(updated.getEmail());
     }
 
-    @ExceptionHandler(UserAlreadyExistsException.class)
+    @ExceptionHandler({
+            UserAlreadyExistsException.class,
+            BreachedPasswordDetectedException.class,
+            PasswordNotChangedException.class,
+            RuntimeException.class
+    })
     @ResponseStatus(value = HttpStatus.BAD_REQUEST)
-    public UserExistsResponse handleUserAlreadyExistsException(UserAlreadyExistsException e) {
-        return new UserExistsResponse("/api/auth/signup");
+    public BadRequestResponse handleRuntimeException(HttpServletRequest req, RuntimeException e) {
+        return new BadRequestResponse(e.getMessage(), req.getRequestURI());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(value = HttpStatus.BAD_REQUEST)
-    public SignupBodyNotValidResponse handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
-        return new SignupBodyNotValidResponse("/api/auth/signup");
+    public BadRequestResponse handleMethodArgumentNotValidException(HttpServletRequest req, MethodArgumentNotValidException e) {
+        String requestURI = req.getRequestURI();
+        String message = e.getBindingResult().getAllErrors().stream().map(DefaultMessageSourceResolvable::getDefaultMessage).toList().get(0);
+        return new BadRequestResponse(message, requestURI);
     }
 }

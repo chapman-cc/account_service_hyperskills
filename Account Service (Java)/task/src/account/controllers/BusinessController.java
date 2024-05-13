@@ -1,7 +1,7 @@
 package account.controllers;
 
 import account.models.Employee;
-import account.responses.SignupResponse;
+import account.dtos.SignupResponse;
 import account.services.EmployeeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;

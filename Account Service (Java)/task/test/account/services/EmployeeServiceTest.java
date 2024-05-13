@@ -22,6 +22,9 @@ class EmployeeServiceTest {
     @Mock
     private PasswordEncoder passwordEncoder;
 
+    @Mock
+    private BreachedPasswordService breachedPasswordService;
+
     @InjectMocks
     private EmployeeService employeeService;
 
@@ -51,5 +54,20 @@ class EmployeeServiceTest {
         Employee capturedEmployee = employeeArgumentCaptor.getValue();
 
         assertThat(capturedEmployee).isEqualTo(employee);
+    }
+
+    @Test
+    void canUpdateEmployeePassword(){
+        Employee employee = new Employee(1L,"John", "Doe", "john@doe.com", "password123456789", "USER");
+
+        Mockito.when(employeeRepository.findByEmailIgnoreCase(employee.getEmail())).thenReturn(Optional.of(employee));
+        Mockito.when(employeeRepository.save(Mockito.any(Employee.class))).thenReturn(employee);
+
+        Employee updated = employeeService.updatePassword(employee.getEmail(), "new_password");
+
+        Mockito.verify(passwordEncoder).encode(Mockito.anyString());
+        Mockito.verify(employeeRepository).save(Mockito.any(Employee.class));
+        assertThat(updated).isEqualTo(employee);
+
     }
 }
