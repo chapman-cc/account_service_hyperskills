@@ -1,5 +1,6 @@
 package account.models;
 
+import account.utils.Regex;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -24,7 +25,7 @@ public class Employee {
     @Column(name = "lastname")
     private String lastname;
 
-    @Email(message = "Email is not valid", regexp = "^.+@acme\\.com$")
+    @Email(message = "Email is not valid", regexp = Regex.EMPLOYEE_EMAIL)
     @NotBlank(message = "Email is mandatory")
     @Column(name = "email")
     private String email;
