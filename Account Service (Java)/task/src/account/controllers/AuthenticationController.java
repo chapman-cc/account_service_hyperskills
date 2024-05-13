@@ -1,6 +1,5 @@
 package account.controllers;
 
-
 import account.dtos.BadRequestResponse;
 import account.dtos.NewPasswordDTO;
 import account.dtos.PasswordChangedResponse;
@@ -37,15 +36,14 @@ public class AuthenticationController {
         if (found.isPresent()) {
             throw new UserAlreadyExistsException();
         }
-
         Employee registered = service.register(employee);
+        return SignupResponse.builder()
+                .id(registered.getId())
+                .name(registered.getName())
+                .lastname(registered.getLastname())
+                .email(registered.getEmail())
+                .build();
 
-        return new SignupResponse(
-                registered.getId(),
-                registered.getName(),
-                registered.getLastname(),
-                registered.getEmail()
-        );
     }
 
     @PostMapping("/changepass")
@@ -55,12 +53,7 @@ public class AuthenticationController {
         return new PasswordChangedResponse(updated.getEmail());
     }
 
-    @ExceptionHandler({
-            UserAlreadyExistsException.class,
-            BreachedPasswordDetectedException.class,
-            PasswordNotChangedException.class,
-            RuntimeException.class
-    })
+    @ExceptionHandler({UserAlreadyExistsException.class, BreachedPasswordDetectedException.class, PasswordNotChangedException.class, RuntimeException.class})
     @ResponseStatus(value = HttpStatus.BAD_REQUEST)
     public BadRequestResponse handleRuntimeException(HttpServletRequest req, RuntimeException e) {
         return new BadRequestResponse(e.getMessage(), req.getRequestURI());

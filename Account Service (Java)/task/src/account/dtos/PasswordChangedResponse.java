@@ -1,6 +1,9 @@
 package account.dtos;
 
 
+import lombok.Builder;
+
+@Builder
 public record PasswordChangedResponse(String email, String status) {
 
     public PasswordChangedResponse(String email) {
