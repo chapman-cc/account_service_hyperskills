@@ -1,6 +1,7 @@
 package account.utils;
 
 
+import org.assertj.core.api.Assertions;
 import org.junit.Test;
 
 import java.util.regex.Pattern;
@@ -21,5 +22,14 @@ public class RegexTest {
         assertFalse(pattern.matcher("John@amc.com").matches());
         assertFalse(pattern.matcher("john@amce.com").matches());
         assertFalse(pattern.matcher("John@amce.co").matches());
+    }
+
+    @Test
+    public void testPayrollPeriodRegex(){
+        Pattern pattern = Pattern.compile(Regex.PAYROLL_PERIOD);
+
+        assertTrue(pattern.matcher("01-2024").matches());
+        assertTrue(pattern.matcher("06-2024").matches());
+        assertTrue(pattern.matcher("12-2024").matches());
     }
 }

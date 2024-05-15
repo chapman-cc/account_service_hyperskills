@@ -9,24 +9,36 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
 public class EmployeeService {
-    private final EmployeeRepository repo;
+    private final EmployeeRepository employeeRepository;
     private final PasswordEncoder encoder;
 
     private final BreachedPasswordService breachedPasswordService;
 
     @Autowired
     public EmployeeService(EmployeeRepository repo, PasswordEncoder encoder, BreachedPasswordService breachedPasswordService) {
-        this.repo = repo;
+        this.employeeRepository = repo;
         this.encoder = encoder;
         this.breachedPasswordService = breachedPasswordService;
     }
 
     public Optional<Employee> findByEmail(String email) {
-        return repo.findByEmailIgnoreCase(email);
+        return employeeRepository.findByEmailIgnoreCase(email);
+    }
+
+
+    public boolean validateEmails(List<String> emails) {
+        for (String email : emails) {
+            boolean exists = employeeRepository.existsByEmailIgnoreCase(email);
+            if (!exists) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Transactional
@@ -40,7 +52,7 @@ public class EmployeeService {
         if (employee.getRole() == null) {
             employee.setRole("USER");
         }
-        return repo.save(employee);
+        return employeeRepository.save(employee);
     }
 
 
@@ -52,5 +64,4 @@ public class EmployeeService {
         employee.setPassword(password);
         return register(employee);
     }
-
 }

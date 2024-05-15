@@ -52,18 +52,4 @@ public class AuthenticationController {
         Employee updated = service.updatePassword(userDetails.getUsername(), body.getPassword());
         return new PasswordChangedResponse(updated.getEmail());
     }
-
-    @ExceptionHandler({UserAlreadyExistsException.class, BreachedPasswordDetectedException.class, PasswordNotChangedException.class, RuntimeException.class})
-    @ResponseStatus(value = HttpStatus.BAD_REQUEST)
-    public BadRequestResponse handleRuntimeException(HttpServletRequest req, RuntimeException e) {
-        return new BadRequestResponse(e.getMessage(), req.getRequestURI());
-    }
-
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    @ResponseStatus(value = HttpStatus.BAD_REQUEST)
-    public BadRequestResponse handleMethodArgumentNotValidException(HttpServletRequest req, MethodArgumentNotValidException e) {
-        String requestURI = req.getRequestURI();
-        String message = e.getBindingResult().getAllErrors().stream().map(DefaultMessageSourceResolvable::getDefaultMessage).toList().get(0);
-        return new BadRequestResponse(message, requestURI);
-    }
 }

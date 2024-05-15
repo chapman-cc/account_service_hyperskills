@@ -3,17 +3,14 @@ package account.services;
 import account.models.Employee;
 import account.repositories.EmployeeRepository;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -29,6 +26,19 @@ class EmployeeServiceTest {
 
     @Autowired
     private EmployeeService employeeService;
+
+    @Test
+    void shouldExistByEmail() {
+        Employee employee1 = new Employee("John", "Doe", "john@doe.com", "password123456789", "USER");
+        Employee employee2 = new Employee("Mary", "Doe", "mary@doe.com", "password123456789", "USER");
+
+        Mockito
+                .when(employeeRepository.existsByEmailIgnoreCase(Mockito.anyString()))
+                .thenReturn(true);
+
+        boolean exists = employeeService.validateEmails(List.of(employee1.getEmail(), employee2.getEmail()));
+        assertThat(exists).isTrue();
+    }
 
     @Test
     void shouldFindEmployeeByEmail() {
@@ -59,8 +69,8 @@ class EmployeeServiceTest {
     }
 
     @Test
-    void canUpdateEmployeePassword(){
-        Employee employee = new Employee(1L,"John", "Doe", "john@doe.com", "password123456789", "USER");
+    void canUpdateEmployeePassword() {
+        Employee employee = new Employee(1L, "John", "Doe", "john@doe.com", "password123456789", "USER");
 
         Mockito.when(employeeRepository.findByEmailIgnoreCase(employee.getEmail())).thenReturn(Optional.of(employee));
         Mockito.when(employeeRepository.save(Mockito.any(Employee.class))).thenReturn(employee);

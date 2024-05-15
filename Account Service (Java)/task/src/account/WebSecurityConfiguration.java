@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.CsrfConfigurer;
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -33,7 +34,14 @@ public class WebSecurityConfiguration {
                 )
                 .authorizeHttpRequests(auth -> auth
                                 .requestMatchers(PathRequest.toH2Console()).permitAll()
+                                .requestMatchers(HttpMethod.GET, "/api/hello-world").permitAll()
+
+                                .requestMatchers(HttpMethod.POST,  "/api/acct/payments").permitAll()
+                                .requestMatchers(HttpMethod.PUT,  "/api/acct/payments").permitAll()
+
                                 .requestMatchers(HttpMethod.POST, "/api/auth/signup").permitAll()
+                                .requestMatchers(HttpMethod.POST, "/api/acct/payments").permitAll()
+
                                 .requestMatchers(HttpMethod.POST, "/actuator/shutdown").permitAll()
 //                        .requestMatchers(HttpMethod.GET, "/api/empl/payment").hasRole("USER")
                                 .anyRequest().authenticated()

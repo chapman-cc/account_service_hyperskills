@@ -29,7 +29,7 @@ public class EmployeeRepositoryTest {
         Employee employee = getEmployee();
         employeeRepository.save(employee);
 
-        assertThat(employeeRepository.existsByEmail(employee.getEmail())).isTrue();
+        assertThat(employeeRepository.existsByEmailIgnoreCase(employee.getEmail())).isTrue();
     }
 
     @Test
@@ -37,7 +37,7 @@ public class EmployeeRepositoryTest {
         Employee employee = getEmployee();
         employeeRepository.save(employee);
 
-        assertThat(employeeRepository.existsByEmail("mary@acme.com")).isFalse();
+        assertThat(employeeRepository.existsByEmailIgnoreCase("mary@acme.com")).isFalse();
     }
 
 
