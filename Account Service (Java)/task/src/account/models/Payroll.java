@@ -41,7 +41,11 @@ public class Payroll {
     @Email(regexp = Regex.EMPLOYEE_EMAIL, message = "incorrect email")
     @NotNull
     @Column(name = "employee_email")
-    private String employee;
+    private String employeeEmail;
+
+    @ManyToOne
+    @JoinColumn(name = "employee_id")
+    private Employee employee;
 
     /**
      * Constructor for Payroll
@@ -50,8 +54,9 @@ public class Payroll {
      * @param employee
      */
     public Payroll(String period, Long salary, String employee) {
+
         this.period = period;
         this.salary = salary;
-        this.employee = employee;
+        this.employeeEmail = employee;
     }
 }
