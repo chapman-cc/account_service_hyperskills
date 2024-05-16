@@ -5,13 +5,18 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.validator.constraints.Length;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 @Data
 @Table(name = "employees")
 public class Employee {
@@ -41,11 +46,25 @@ public class Employee {
     @Column(name = "role")
     private String role;
 
+
+    @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL)
+    private List<Payroll> payrolls;
+
     public Employee(String name, String lastname, String email, String password, String role) {
         this.name = name;
         this.lastname = lastname;
         this.email = email;
         this.password = password;
         this.role = role;
+    }
+
+    public void addPayroll(Payroll payroll) {
+        if (payrolls == null) {
+            payrolls = new ArrayList<>();
+        }
+        if (!payroll.getEmployee().equals(email)) {
+            payroll.setEmployee(email);
+        }
+        payrolls.add(payroll);
     }
 }

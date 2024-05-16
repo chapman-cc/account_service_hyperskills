@@ -70,7 +70,8 @@ class EmployeeServiceTest {
 
     @Test
     void canUpdateEmployeePassword() {
-        Employee employee = new Employee(1L, "John", "Doe", "john@doe.com", "password123456789", "USER");
+        Employee employee = new Employee("John", "Doe", "john@doe.com", "password123456789", "USER");
+        employee.setId(1L);
 
         Mockito.when(employeeRepository.findByEmailIgnoreCase(employee.getEmail())).thenReturn(Optional.of(employee));
         Mockito.when(employeeRepository.save(Mockito.any(Employee.class))).thenReturn(employee);

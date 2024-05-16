@@ -1,11 +1,15 @@
 package account.repositories;
 
 import account.models.Employee;
+import account.models.Payroll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -13,10 +17,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DataJpaTest
 public class EmployeeRepositoryTest {
     private final EmployeeRepository employeeRepository;
+    private final PayrollRepository payrollRepository;
 
     @Autowired
-    public EmployeeRepositoryTest(EmployeeRepository employeeRepository) {
+    public EmployeeRepositoryTest(EmployeeRepository employeeRepository, PayrollRepository payrollRepository) {
         this.employeeRepository = employeeRepository;
+        this.payrollRepository = payrollRepository;
     }
 
     @AfterEach
@@ -55,6 +61,31 @@ public class EmployeeRepositoryTest {
 
         assertThat(optional1.isPresent()).isTrue();
         assertThat(optional1.get()).isEqualTo(employee);
+    }
+
+    @Test
+    void canSaveEmployeePayrollsCascade() {
+        Employee employee1 = getEmployee();
+        Employee employee2 = new Employee("Mary", "Moppin", "marymoppin@acme.com", "passwordsecret", "USER");
+
+        employee1.addPayroll(new Payroll("01-2024", 1000L, employee1.getEmail()));
+        employee1.addPayroll(new Payroll("02-2024", 1000L, employee1.getEmail()));
+        employee1.addPayroll(new Payroll("03-2024", 1000L, employee1.getEmail()));
+
+        employee2.addPayroll(new Payroll("05-2024", 1000L, employee2.getEmail()));
+        employee2.addPayroll(new Payroll("06-2024", 1000L, employee2.getEmail()));
+
+        employeeRepository.saveAll(List.of(employee1, employee2));
+
+        List<Payroll> payrolls = new ArrayList<>();
+        payrollRepository.findAll().forEach(payrolls::add);
+        assertThat(payrolls.size()).isEqualTo(5);
+
+        Employee savedEmployee1 = employeeRepository.findById(employee1.getId()).orElseThrow();
+        assertThat(savedEmployee1.getPayrolls().size()).isEqualTo(3);
+
+        Employee savedEmployee2 = employeeRepository.findById(employee2.getId()).orElseThrow();
+        assertThat(savedEmployee2.getPayrolls().size()).isEqualTo(2);
     }
 
 
