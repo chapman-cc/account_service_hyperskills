@@ -3,7 +3,6 @@ package account.repositories;
 
 import account.models.Employee;
 import account.models.Payroll;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -144,5 +143,23 @@ class PayrollRepositoryTest {
 
         assertThat(list.size()).isEqualTo(3);
         assertThat(list.stream().filter(p -> p.getSalary() > 1000L).count()).isEqualTo(1);
+    }
+
+    @Test
+    void saveAllReturnsPayrolls() {
+        Payroll payroll1 = Payroll.builder().salary(1000L).period("01-2024").employee(employee).build();
+        Payroll payroll2 = Payroll.builder().salary(1000L).period("02-2024").employee(employee).build();
+        Payroll payroll3 = Payroll.builder().salary(1000L).period("03-2024").employee(employee).build();
+
+        List<Payroll> payrolls = List.of(payroll1, payroll2, payroll3);
+
+        List<Payroll> target = new ArrayList<>();
+
+        payrollRepository.saveAll(payrolls).forEach(target::add);
+
+        assertThat(target.size()).isEqualTo(3);
+        assertThat(target).allSatisfy(payroll -> assertThat(payroll.getId()).isGreaterThan(0))
+                .allSatisfy(payroll -> assertThat(payroll.getEmployee().getId()).isEqualTo(employee.getId()))
+                .allSatisfy(payroll -> assertThat(payroll.getSalary()).isEqualTo(1000L));
     }
 }

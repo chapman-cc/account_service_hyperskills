@@ -82,7 +82,7 @@ public class PayrollService {
                     .employee(employee)
                     .build());
         }
-//        TODO: check if original payroll has id
+
         Iterable<Payroll> saved = payrollRepository.saveAll(pendingPayrolls);
 
         List<Payroll> savedList = new ArrayList<>();
