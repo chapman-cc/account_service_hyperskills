@@ -1,16 +1,19 @@
 package account.utils;
 
-import static org.assertj.core.api.Assertions.*;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class ConverterTest {
 
-    @Autowired
-    Converter converter;
+    private Converter converter;
+
+    public ConverterTest() {
+        this.converter = new Converter();
+    }
 
     @BeforeEach
     void setUp() {
@@ -22,7 +25,7 @@ class ConverterTest {
     }
 
     @Test
-    void convertNumPeriodToStringPeriod(){
+    void convertNumPeriodToStringPeriod() {
 
         assertThat(converter.convertPeriodToString("01-2024")).isEqualTo("January-2024");
         assertThat(converter.convertPeriodToString("02-2024")).isEqualTo("February-2024");
@@ -41,7 +44,8 @@ class ConverterTest {
                 .isInstanceOf(RuntimeException.class);
     }
 
-@Test
-void convertSalaryToString(){
-    assertThat(converter.convertSalaryToString(123456)).isEqualTo("1234 dollar(s) 56 cent(s)");
-}}
+    @Test
+    void convertSalaryToString() {
+        assertThat(converter.convertSalaryToString(123456)).isEqualTo("1234 dollar(s) 56 cent(s)");
+    }
+}

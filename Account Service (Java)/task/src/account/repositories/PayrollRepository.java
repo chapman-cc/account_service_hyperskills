@@ -9,7 +9,7 @@ import java.util.Optional;
 
 public interface PayrollRepository extends CrudRepository<Payroll, Long> {
 
-    Optional<Payroll> findByEmployeeAndPeriod(String employee, String period);
+    Optional<Payroll> findByEmployeeAndPeriod(Employee employee, String period);
     Optional<Payroll> findByEmployeeEmailAndPeriod(String email, String period);
     List<Payroll> findByEmployee(Employee employee);
     List<Payroll> findByEmployeeEmail(String email);

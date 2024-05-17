@@ -8,7 +8,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 
@@ -68,12 +67,12 @@ public class EmployeeRepositoryTest {
         Employee employee1 = getEmployee();
         Employee employee2 = new Employee("Mary", "Moppin", "marymoppin@acme.com", "passwordsecret", "USER");
 
-        employee1.addPayroll(new Payroll("01-2024", 1000L, employee1.getEmail()));
-        employee1.addPayroll(new Payroll("02-2024", 1000L, employee1.getEmail()));
-        employee1.addPayroll(new Payroll("03-2024", 1000L, employee1.getEmail()));
+        employee1.addPayroll(new Payroll("01-2024", 1000L));
+        employee1.addPayroll(new Payroll("02-2024", 1000L));
+        employee1.addPayroll(new Payroll("03-2024", 1000L));
 
-        employee2.addPayroll(new Payroll("05-2024", 1000L, employee2.getEmail()));
-        employee2.addPayroll(new Payroll("06-2024", 1000L, employee2.getEmail()));
+        employee2.addPayroll(new Payroll("05-2024", 1000L));
+        employee2.addPayroll(new Payroll("06-2024", 1000L));
 
         employeeRepository.saveAll(List.of(employee1, employee2));
 

@@ -1,24 +1,15 @@
 package account.controllers;
 
-import account.dtos.BadRequestResponse;
 import account.dtos.NewPasswordDTO;
 import account.dtos.PasswordChangedResponse;
 import account.dtos.SignupResponse;
-import account.exceptions.BreachedPasswordDetectedException;
-import account.exceptions.PasswordNotChangedException;
-import account.exceptions.UserAlreadyExistsException;
 import account.models.Employee;
 import account.services.EmployeeService;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
-import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -32,24 +23,12 @@ public class AuthenticationController {
     @PostMapping("/signup")
     @ResponseStatus(HttpStatus.OK)
     public SignupResponse signUp(@Valid @RequestBody Employee employee) {
-        Optional<Employee> found = service.findByEmail(employee.getEmail());
-        if (found.isPresent()) {
-            throw new UserAlreadyExistsException();
-        }
-        Employee registered = service.register(employee);
-        return SignupResponse.builder()
-                .id(registered.getId())
-                .name(registered.getName())
-                .lastname(registered.getLastname())
-                .email(registered.getEmail())
-                .build();
-
+        return service.register(employee);
     }
 
     @PostMapping("/changepass")
     @ResponseStatus(HttpStatus.OK)
     public PasswordChangedResponse changePassword(@AuthenticationPrincipal UserDetails userDetails, @Valid @RequestBody NewPasswordDTO body) {
-        Employee updated = service.updatePassword(userDetails.getUsername(), body.getPassword());
-        return new PasswordChangedResponse(updated.getEmail());
+        return service.updatePassword(userDetails.getUsername(), body.getPassword());
     }
 }

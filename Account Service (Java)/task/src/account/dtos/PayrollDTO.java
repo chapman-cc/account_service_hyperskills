@@ -1,15 +1,14 @@
 package account.dtos;
 
-import account.utils.Regex;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.Pattern;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Builder
-@Getter
+@Data
 @AllArgsConstructor
+@NoArgsConstructor
 public class PayrollDTO {
     private String name;
     private String lastname;

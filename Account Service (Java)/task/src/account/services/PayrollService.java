@@ -2,14 +2,15 @@ package account.services;
 
 
 import account.dtos.PayrollDTO;
+import account.dtos.PayrollRequestBody;
 import account.exceptions.DuplicateEmployeePeriodException;
 import account.exceptions.EmployeeEmailNotValidException;
 import account.exceptions.PayrollRecordNotFound;
 import account.models.Employee;
 import account.models.Payroll;
 import account.repositories.PayrollRepository;
-import account.utils.Converter;
 import jakarta.transaction.Transactional;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -25,64 +26,41 @@ public class PayrollService {
 
     private final PayrollRepository payrollRepository;
 
-    private final Converter converter;
+    private final ModelMapper  modelMapper;
 
     @Autowired
-    public PayrollService(EmployeeService employeeService, PayrollRepository payrollRepository, Converter converter) {
+    public PayrollService(EmployeeService employeeService, PayrollRepository payrollRepository, ModelMapper modelMapper) {
         this.employeeService = employeeService;
         this.payrollRepository = payrollRepository;
-        this.converter = converter;
+        this.modelMapper = modelMapper;
     }
 
     public List<PayrollDTO> getPayroll(String email) {
-        Employee employee = employeeService.findByEmail(email)
-                .orElseThrow(() -> new EmployeeEmailNotValidException("Cannot find employee %s".formatted(email)));
-
-        List<Payroll> payrolls = payrollRepository.findByEmployee(email);
-
-        return payrolls.stream()
-                .map(payroll -> {
-                    String period = converter.convertPeriodToString(payroll.getPeriod());
-                    String salary = converter.convertSalaryToString(payroll.getSalary());
-                    return PayrollDTO.builder()
-                            .name(employee.getName())
-                            .lastname(employee.getLastname())
-                            .period(period)
-                            .salary(salary)
-                            .build();
-                })
+        return payrollRepository.findByEmployeeEmail(email).stream()
+                .map(payroll -> modelMapper.map(payroll, PayrollDTO.class))
                 .toList();
     }
-    public PayrollDTO getPayroll(String email, String period) {
-        Employee employee = employeeService.findByEmail(email)
-                .orElseThrow(() -> new EmployeeEmailNotValidException("Cannot find employee %s".formatted(email)));
 
-        Payroll payroll = payrollRepository.findByEmployeeAndPeriod(email, period)
+    public PayrollDTO getPayroll(String email, String period) {
+        Payroll payroll = payrollRepository.findByEmployeeEmailAndPeriod(email, period)
                 .orElseThrow(() -> new PayrollRecordNotFound("Cannot find payroll for %s at %s".formatted(email, period)));
 
-        String displayPeriod = converter.convertPeriodToString(payroll.getPeriod());
-        String displaySalary = converter.convertSalaryToString(payroll.getSalary());
-
-        return PayrollDTO.builder()
-                .name(employee.getName())
-                .lastname(employee.getLastname())
-                .period(displayPeriod)
-                .salary(displaySalary)
-                .build();
+        return modelMapper.map(payroll, PayrollDTO.class);
     }
 
     @Transactional
-    public List<Payroll> savePayrolls(List<Payroll> payrolls) {
+    public List<Payroll> savePayrolls(List<PayrollRequestBody> bodies) {
         Set<String> periodSet = new HashSet<>();
-        List<String> emails = new ArrayList<>();
+        Set<String> emailSet = new HashSet<>();
+        List<Payroll> pendingPayrolls = new ArrayList<>();
 
-
-        payrolls.forEach(payroll -> {
+        bodies.forEach(payroll -> {
             periodSet.add(payroll.getPeriod());
-            emails.add(payroll.getEmployee());
+            emailSet.add(payroll.getEmployeeEmail());
         });
+        List<String> emails = emailSet.stream().toList();
 
-        if (periodSet.size() != payrolls.size()) {
+        if (periodSet.size() != bodies.size()) {
             throw new DuplicateEmployeePeriodException("Duplicated period");
         }
 
@@ -90,7 +68,22 @@ public class PayrollService {
             throw new EmployeeEmailNotValidException("Invalid employee email");
         }
 
-        Iterable<Payroll> saved = payrollRepository.saveAll(payrolls);
+        Employee employee = null;
+
+        for (PayrollRequestBody body : bodies) {
+            if (employee == null || employee.getEmail().equals(body.getEmployeeEmail())) {
+                employee = employeeService.findByEmail(body.getEmployeeEmail())
+                        .orElseThrow(() -> new EmployeeEmailNotValidException("Employee not record"));
+            }
+
+            pendingPayrolls.add(Payroll.builder()
+                    .period(body.getPeriod())
+                    .salary(body.getSalary())
+                    .employee(employee)
+                    .build());
+        }
+//        TODO: check if original payroll has id
+        Iterable<Payroll> saved = payrollRepository.saveAll(pendingPayrolls);
 
         List<Payroll> savedList = new ArrayList<>();
         saved.forEach(savedList::add);
@@ -98,15 +91,12 @@ public class PayrollService {
         return savedList;
     }
 
-
-    public Payroll updatePayroll(Payroll payroll) {
-        employeeService.findByEmail(payroll.getEmployee())
-                .orElseThrow(() -> new EmployeeEmailNotValidException("Employee not record"));
-
-        Payroll record = payrollRepository.findByEmployeeAndPeriod(payroll.getEmployee(), payroll.getPeriod())
+    @Transactional
+    public Payroll updatePayroll(PayrollRequestBody body) {
+        Payroll payroll = payrollRepository.findByEmployeeEmailAndPeriod(body.getEmployeeEmail(), body.getPeriod())
                 .orElseThrow(() -> new PayrollRecordNotFound("Previous payroll record not record"));
 
-        record.setSalary(payroll.getSalary());
+        payroll.setSalary(body.getSalary());
         return payrollRepository.save(payroll);
     }
 }

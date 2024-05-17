@@ -1,7 +1,19 @@
 package account.dtos;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 
 @Builder
-public record SignupResponse(long id, String name, String lastname, String email) {
+@AllArgsConstructor
+@NoArgsConstructor
+@Data
+public final class SignupResponse {
+    private long id;
+    private String name;
+    private String lastname;
+    private String email;
+
 }

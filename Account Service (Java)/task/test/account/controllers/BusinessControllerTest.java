@@ -1,6 +1,7 @@
 package account.controllers;
 
 import account.dtos.PayrollDTO;
+import account.dtos.PayrollRequestBody;
 import account.models.Payroll;
 import account.services.PayrollService;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -45,6 +46,8 @@ class BusinessControllerTest {
 
     private PayrollDTO payrollDTO;
 
+    private PayrollRequestBody body;
+
     @BeforeEach
     void setUp() {
         payrollDTO = PayrollDTO.builder()
@@ -52,6 +55,11 @@ class BusinessControllerTest {
                 .lastname("Doe")
                 .period("May-2021")
                 .salary("1234 dollar(s) 56 cent(s)")
+                .build();
+        body = PayrollRequestBody.builder()
+                .employeeEmail("john@acme.com")
+                .salary(1000L)
+                .period("01-2024")
                 .build();
     }
 
@@ -66,10 +74,10 @@ class BusinessControllerTest {
 
     @Test
     void canPostPayroll() throws Exception {
-        Payroll payroll = Payroll.builder().period("01-2024").salary(1000L).employee("john@acme.com").build();
+
         mockMvc.perform(post("/api/acct/payments")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(convertJsonToString(List.of(payroll)))
+                        .content(convertJsonToString(List.of(body)))
                 )
                 .andExpectAll(
                         status().isOk(),
@@ -79,7 +87,7 @@ class BusinessControllerTest {
 
     @Test
     void cannotPostPayrollDueToIncorrectFormat() throws Exception {
-        Payroll payroll = Payroll.builder().period("13-2024").salary(-1L).employee("john@acme.com").build();
+        Payroll payroll = Payroll.builder().period("13-2024").salary(-1L).build();
 
         mockMvc.perform(post("/api/acct/payments")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -96,13 +104,12 @@ class BusinessControllerTest {
 
     @Test
     void canPutPayroll() throws Exception {
-        Payroll payrollDTO = Payroll.builder().period("01-2024").salary(1000L).employee("john@acme.com").build();
 
-        when(payrollService.updatePayroll(any(Payroll.class))).thenReturn(any(Payroll.class));
+        when(payrollService.updatePayroll(any(PayrollRequestBody.class))).thenReturn(any(Payroll.class));
 
         mockMvc.perform(put("/api/acct/payments")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(convertJsonToString(payrollDTO))
+                        .content(convertJsonToString(body))
                 )
                 .andExpectAll(
                         status().isOk(),

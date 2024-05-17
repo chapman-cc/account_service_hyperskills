@@ -1,6 +1,9 @@
 package account.controllers;
 
-import account.dtos.*;
+import account.dtos.BadRequestResponse;
+import account.dtos.NewPasswordDTO;
+import account.dtos.PasswordChangedResponse;
+import account.dtos.SignupResponse;
 import account.models.Employee;
 import account.repositories.EmployeeRepository;
 import account.services.EmployeeService;
@@ -20,7 +23,7 @@ import java.net.URL;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@TestPropertySource(properties = {"spring.datasource.url=jdbc:h2:mem:test"})
+@TestPropertySource(properties = "spring.datasource.url=jdbc:h2:mem:test")
 class AuthenticationControllerTest {
 
     @LocalServerPort
@@ -56,10 +59,10 @@ class AuthenticationControllerTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         SignupResponse body = response.getBody();
         assertThat(body).isNotNull();
-        assertThat(body.id()).isGreaterThan(0);
-        assertThat(body.name()).isEqualTo(employee.getName());
-        assertThat(body.lastname()).isEqualTo(employee.getLastname());
-        assertThat(body.email()).isEqualTo(employee.getEmail());
+        assertThat(body.getId()).isGreaterThan(0);
+        assertThat(body.getName()).isEqualTo(employee.getName());
+        assertThat(body.getLastname()).isEqualTo(employee.getLastname());
+        assertThat(body.getEmail()).isEqualTo(employee.getEmail());
 
     }
 
@@ -153,6 +156,7 @@ class AuthenticationControllerTest {
                 .hasFieldOrPropertyWithValue("status", "The password has been updated successfully")
                 .hasFieldOrPropertyWithValue("email", employee.getEmail());
     }
+
     @Test
     void cannotChangePasswordOfLengthLessThan12() {
         // Arrange
@@ -182,6 +186,7 @@ class AuthenticationControllerTest {
         assertThat(responseBody.error()).isEqualTo("Bad Request");
         assertThat(responseBody.message()).isEqualTo("Password length must be 12 chars minimum!");
     }
+
     @Test
     void cannotRegisterWithBreachedPassword() {
         // Arrange
@@ -207,6 +212,7 @@ class AuthenticationControllerTest {
         assertThat(responseBody.error()).isEqualTo("Bad Request");
         assertThat(responseBody.message()).isEqualTo("The password is in the hacker's database!");
     }
+
     @Test
     void cannotChangePasswordWhenPasswordAreSame() {
         // Arrange

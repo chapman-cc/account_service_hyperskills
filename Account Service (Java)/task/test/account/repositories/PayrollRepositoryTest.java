@@ -12,8 +12,10 @@ import org.springframework.boot.jdbc.EmbeddedDatabaseConnection;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
 @AutoConfigureTestDatabase(connection = EmbeddedDatabaseConnection.H2)
@@ -22,96 +24,125 @@ class PayrollRepositoryTest {
     @Autowired
     private PayrollRepository payrollRepository;
     @Autowired
-    private EmployeeRepository  employeeRepository;
+    private EmployeeRepository employeeRepository;
+
+    private Employee employee;
 
     @BeforeEach
     void setUp() {
+        employee = Employee.builder()
+                .name("John")
+                .lastname("Doe")
+                .email("john@acme.com")
+                .password("secretpassword")
+                .build();
     }
 
     @AfterEach
     void tearDown() {
         payrollRepository.deleteAll();
+        employeeRepository.deleteAll();
     }
 
 
     @Test
-    void canFindPayrollByEmailAndPeriod() {
-        String email = "john@acme.com";
+    void canFindPayrollByEmployeeAndPeriod() {
+        Employee employee = Employee.builder()
+                .name("John")
+                .lastname("Doe")
+                .email("john@acme.com")
+                .password("secretpassword")
+                .build();
         List<Payroll> payrolls = List.of(
-                new Payroll("01-2024", 1000L, email),
-                new Payroll("02-2024", 1000L, email),
-                new Payroll("03-2024", 1000L, email),
-                new Payroll("04-2024", 1000L, email),
-                new Payroll("05-2024", 1000L, email)
+                new Payroll("01-2024", 1000L),
+                new Payroll("02-2024", 1000L),
+                new Payroll("03-2024", 1000L),
+                new Payroll("04-2024", 1000L),
+                new Payroll("05-2024", 1000L)
         );
+
+        payrolls.forEach(payroll -> payroll.setEmployee(employee));
 
         payrollRepository.saveAll(payrolls);
 
-        Payroll found = payrollRepository.findByEmployeeAndPeriod(email, "03-2024").orElseThrow();
-        Assertions.assertThat(found.getPeriod()).isEqualTo("03-2024");
-        Assertions.assertThat(found.getEmployeeEmail()).isEqualTo(email);
+        String email = employee.getEmail();
+        String period = payrolls.get(2).getPeriod();
+        Payroll found = payrollRepository.findByEmployeeAndPeriod(employee, period).orElseThrow();
+        assertThat(found.getPeriod()).isEqualTo(period);
+        assertThat(found.getEmployee().getEmail()).isEqualTo(email);
     }
 
     @Test
     void canFindByEmployee() {
-        Employee employee = Employee.builder()
-                .name("John")
-                .lastname("Doe")
-                .email("john@acme.com")
-                .password("secretpassword")
-                .build();
+        Payroll payroll1 = new Payroll("01-2024", 1000L);
+        Payroll payroll2 = new Payroll("02-2024", 1000L);
 
-        Payroll payroll1 = new Payroll("01-2024", 1000L, employee.getEmail());
-        Payroll payroll2 = new Payroll("02-2024", 1000L, employee.getEmail());
-        employee.addPayrolls(List.of(payroll1, payroll2));
+        List<Payroll> payrolls = List.of(payroll1, payroll2);
+        payrolls.forEach(payroll -> payroll.setEmployee(employee));
 
-        payrollRepository.saveAll(List.of(payroll1, payroll2));
-
-        employeeRepository.save(employee);
+        payrollRepository.saveAll(payrolls);
 
         List<Payroll> found = payrollRepository.findByEmployee(employee);
-        Assertions.assertThat(found.size()).isEqualTo(2);
+        assertThat(found.size()).isEqualTo(2);
     }
+
     @Test
     void canFindByEmployeeEmail() {
-        Employee employee = Employee.builder()
-                .name("John")
-                .lastname("Doe")
-                .email("john@acme.com")
-                .password("secretpassword")
-                .build();
+        Payroll payroll1 = new Payroll("01-2024", 1000L);
+        Payroll payroll2 = new Payroll("02-2024", 1000L);
+        List<Payroll> payrolls = List.of(payroll1, payroll2);
 
-        Payroll payroll1 = new Payroll("01-2024", 1000L, employee.getEmail());
-        Payroll payroll2 = new Payroll("02-2024", 1000L, employee.getEmail());
-        employee.addPayrolls(List.of(payroll1, payroll2));
+        payrolls.forEach(payroll -> payroll.setEmployee(employee));
 
-        payrollRepository.saveAll(List.of(payroll1, payroll2));
-
-        employeeRepository.save(employee);
+        payrollRepository.saveAll(payrolls);
 
         List<Payroll> found = payrollRepository.findByEmployeeEmail(employee.getEmail());
-        Assertions.assertThat(found.size()).isEqualTo(2);
+        assertThat(found.size()).isEqualTo(2);
     }
-    @Test
-    void canFindByEmployeeEmailAndPeriod() {
-        Employee employee = Employee.builder()
-                .name("John")
-                .lastname("Doe")
-                .email("john@acme.com")
-                .password("secretpassword")
-                .build();
 
-        Payroll payroll1 = new Payroll("01-2024", 1000L, employee.getEmail());
-        Payroll payroll2 = new Payroll("02-2024", 1000L, employee.getEmail());
+    @Test
+    void canFindByEmployeeAndPeriod() {
+        Payroll payroll1 = new Payroll("01-2024", 1000L);
+        Payroll payroll2 = new Payroll("02-2024", 1000L);
 
         employee.addPayrolls(List.of(payroll1, payroll2));
 
         payrollRepository.saveAll(List.of(payroll1, payroll2));
 
-        employeeRepository.save(employee);
-
-        Payroll found = payrollRepository.findByEmployeeEmailAndPeriod(employee.getEmail(), payroll2.getPeriod()).orElseThrow();
-        Assertions.assertThat(found.getPeriod()).isEqualTo(payroll2.getPeriod());
+        Payroll found = payrollRepository.findByEmployeeAndPeriod(employee, payroll2.getPeriod()).orElseThrow();
+        assertThat(found.getPeriod()).isEqualTo(payroll2.getPeriod());
     }
 
+    @Test
+    void canFindByEmployeeEmailAndPeriod() {
+        Payroll payroll1 = new Payroll("01-2024", 1000L);
+        Payroll payroll2 = new Payroll("02-2024", 1000L);
+
+        employee.addPayrolls(List.of(payroll1, payroll2));
+
+        payrollRepository.saveAll(List.of(payroll1, payroll2));
+
+        Payroll found = payrollRepository.findByEmployeeEmailAndPeriod(employee.getEmail(), payroll2.getPeriod()).orElseThrow();
+        assertThat(found.getPeriod()).isEqualTo(payroll2.getPeriod());
+    }
+
+    @Test
+    void canUpdatePayroll() {
+        Payroll payroll1 = Payroll.builder().salary(1000L).period("01-2024").employee(employee).build();
+        Payroll payroll2 = Payroll.builder().salary(1000L).period("02-2024").employee(employee).build();
+        Payroll payroll3 = Payroll.builder().salary(1000L).period("03-2024").employee(employee).build();
+
+        payrollRepository.saveAll(List.of(payroll1, payroll2, payroll3));
+
+        Payroll toBeUpdated = payrollRepository.findByEmployeeEmailAndPeriod(employee.getEmail(), "02-2024").orElseThrow();
+        toBeUpdated.setSalary(1200L);
+
+        payrollRepository.save(toBeUpdated);
+
+        List<Payroll> list = new ArrayList<>();
+        payrollRepository.findAll().forEach(list::add);
+
+        assertThat(list.size()).isEqualTo(3);
+        assertThat(list.stream().filter(p -> p.getSalary() > 1000L).count()).isEqualTo(1);
+    }
 }

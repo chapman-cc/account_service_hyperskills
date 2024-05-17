@@ -1,6 +1,7 @@
 package account.controllers;
 
 import account.dtos.PayrollDTO;
+import account.dtos.PayrollRequestBody;
 import account.dtos.PayrollResponse;
 import account.models.Payroll;
 import account.services.PayrollService;
@@ -59,14 +60,14 @@ public class BusinessController {
 
     @PostMapping("/acct/payments")
     @ResponseStatus(HttpStatus.OK)
-    public PayrollResponse uploadEmployeePayroll(@RequestBody @Valid List<Payroll> payrolls) {
-        payrollService.savePayrolls(payrolls);
+    public PayrollResponse uploadEmployeePayroll(@RequestBody @Valid List<PayrollRequestBody> bodies) {
+        payrollService.savePayrolls(bodies);
         return new PayrollResponse("Added successfully!");
     }
 
     @PutMapping("/acct/payments")
-    public PayrollResponse updateEmployeePayroll(@Valid @RequestBody Payroll payroll) {
-        payrollService.updatePayroll(payroll);
+    public PayrollResponse updateEmployeePayroll(@Valid @RequestBody PayrollRequestBody body) {
+        payrollService.updatePayroll(body);
         return new PayrollResponse("Updated successfully!");
     }
 }

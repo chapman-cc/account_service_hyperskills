@@ -1,5 +1,6 @@
 package account.services;
 
+import account.dtos.PasswordChangedResponse;
 import account.models.Employee;
 import account.repositories.EmployeeRepository;
 import org.junit.jupiter.api.Test;
@@ -14,6 +15,9 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @SpringBootTest
 class EmployeeServiceTest {
@@ -32,8 +36,7 @@ class EmployeeServiceTest {
         Employee employee1 = new Employee("John", "Doe", "john@doe.com", "password123456789", "USER");
         Employee employee2 = new Employee("Mary", "Doe", "mary@doe.com", "password123456789", "USER");
 
-        Mockito
-                .when(employeeRepository.existsByEmailIgnoreCase(Mockito.anyString()))
+        when(employeeRepository.existsByEmailIgnoreCase(Mockito.anyString()))
                 .thenReturn(true);
 
         boolean exists = employeeService.validateEmails(List.of(employee1.getEmail(), employee2.getEmail()));
@@ -44,8 +47,7 @@ class EmployeeServiceTest {
     void shouldFindEmployeeByEmail() {
         Employee employee = new Employee("John", "Doe", "john@doe.com", "password123456789", "USER");
 
-        Mockito
-                .when(employeeRepository.findByEmailIgnoreCase(employee.getEmail()))
+        when(employeeRepository.findByEmailIgnoreCase(employee.getEmail()))
                 .thenReturn(Optional.of(employee));
 
         Optional<Employee> found = employeeService.findByEmail(employee.getEmail());
@@ -55,13 +57,20 @@ class EmployeeServiceTest {
 
     @Test
     void canRegisterNewEmployee() {
-        Employee employee = new Employee("John", "Doe", "john@doe.com", "password123456789", "USER");
+        Employee employee = Employee.builder()
+                .id(1L)
+                .name("John")
+                .lastname("Doe")
+                .email("john@doe.com")
+                .password("password123456789")
+                .role("USER")
+                .build();
 
         ArgumentCaptor<Employee> employeeArgumentCaptor = ArgumentCaptor.forClass(Employee.class);
-
+        when(employeeRepository.save(any(Employee.class))).thenReturn(employee);
         employeeService.register(employee);
 
-        Mockito.verify(employeeRepository).save(employeeArgumentCaptor.capture());
+        verify(employeeRepository).save(employeeArgumentCaptor.capture());
 
         Employee capturedEmployee = employeeArgumentCaptor.getValue();
 
@@ -73,14 +82,15 @@ class EmployeeServiceTest {
         Employee employee = new Employee("John", "Doe", "john@doe.com", "password123456789", "USER");
         employee.setId(1L);
 
-        Mockito.when(employeeRepository.findByEmailIgnoreCase(employee.getEmail())).thenReturn(Optional.of(employee));
-        Mockito.when(employeeRepository.save(Mockito.any(Employee.class))).thenReturn(employee);
+        when(employeeRepository.findByEmailIgnoreCase(employee.getEmail())).thenReturn(Optional.of(employee));
+        when(employeeRepository.save(any(Employee.class))).thenReturn(employee);
 
-        Employee updated = employeeService.updatePassword(employee.getEmail(), "new_password");
+        PasswordChangedResponse resp = employeeService.updatePassword(employee.getEmail(), "new_password");
 
-        Mockito.verify(passwordEncoder).encode(Mockito.anyString());
-        Mockito.verify(employeeRepository).save(Mockito.any(Employee.class));
-        assertThat(updated).isEqualTo(employee);
+        verify(passwordEncoder).encode(Mockito.anyString());
+        verify(employeeRepository).save(any(Employee.class));
+        assertThat(resp.email()).isEqualTo(employee.getEmail());
+        assertThat(resp.status()).isEqualTo(PasswordChangedResponse.DEFAULT_MSG);
 
     }
 }

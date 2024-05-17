@@ -1,6 +1,7 @@
 package account.models;
 
 import account.utils.Regex;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -18,6 +19,7 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 @Data
+@JsonInclude(JsonInclude.Include.NON_NULL)
 @Table(name = "employees")
 public class Employee {
     @Id
@@ -62,9 +64,19 @@ public class Employee {
         if (payrolls == null) {
             payrolls = new ArrayList<>();
         }
-        if (!payroll.getEmployee().equals(email)) {
-            payroll.setEmployee(email);
+        if (payroll.getEmployee() != this) {
+            payroll.setEmployee(this);
         }
         payrolls.add(payroll);
+    }
+
+    public void setPayrolls(List<Payroll> payrolls) {
+        this.payrolls = payrolls;
+        for (Payroll payroll : payrolls) {
+            payroll.setEmployee(this);
+        }
+    }
+    public void addPayrolls(List<Payroll> payrolls) {
+        payrolls.forEach(this::addPayroll);
     }
 }
