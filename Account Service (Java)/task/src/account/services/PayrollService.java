@@ -2,7 +2,7 @@ package account.services;
 
 
 import account.dtos.PayrollDTO;
-import account.dtos.PayrollRequestBody;
+import account.requestBodies.PayrollRequest;
 import account.exceptions.DuplicateEmployeePeriodException;
 import account.exceptions.EmployeeEmailNotValidException;
 import account.exceptions.PayrollRecordNotFound;
@@ -49,7 +49,7 @@ public class PayrollService {
     }
 
     @Transactional
-    public List<Payroll> savePayrolls(List<PayrollRequestBody> bodies) {
+    public List<Payroll> savePayrolls(List<PayrollRequest> bodies) {
         Set<String> periodSet = new HashSet<>();
         Set<String> emailSet = new HashSet<>();
         List<Payroll> pendingPayrolls = new ArrayList<>();
@@ -70,7 +70,7 @@ public class PayrollService {
 
         Employee employee = null;
 
-        for (PayrollRequestBody body : bodies) {
+        for (PayrollRequest body : bodies) {
             if (employee == null || employee.getEmail().equals(body.getEmployeeEmail())) {
                 employee = employeeService.findByEmail(body.getEmployeeEmail())
                         .orElseThrow(() -> new EmployeeEmailNotValidException("Employee not record"));
@@ -92,7 +92,7 @@ public class PayrollService {
     }
 
     @Transactional
-    public Payroll updatePayroll(PayrollRequestBody body) {
+    public Payroll updatePayroll(PayrollRequest body) {
         Payroll payroll = payrollRepository.findByEmployeeEmailAndPeriod(body.getEmployeeEmail(), body.getPeriod())
                 .orElseThrow(() -> new PayrollRecordNotFound("Previous payroll record not record"));
 

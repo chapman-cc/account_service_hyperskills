@@ -1,16 +1,14 @@
 package account.controllers;
 
 import account.dtos.PayrollDTO;
-import account.dtos.PayrollRequestBody;
-import account.dtos.PayrollResponse;
-import account.models.Payroll;
+import account.requestBodies.PayrollRequest;
+import account.responses.PayrollResponse;
 import account.services.PayrollService;
 import account.utils.Regex;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Pattern;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.access.AuthorizationServiceException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -60,13 +58,13 @@ public class BusinessController {
 
     @PostMapping("/acct/payments")
     @ResponseStatus(HttpStatus.OK)
-    public PayrollResponse uploadEmployeePayroll(@RequestBody @Valid List<PayrollRequestBody> bodies) {
+    public PayrollResponse uploadEmployeePayroll(@RequestBody @Valid List<PayrollRequest> bodies) {
         payrollService.savePayrolls(bodies);
         return new PayrollResponse("Added successfully!");
     }
 
     @PutMapping("/acct/payments")
-    public PayrollResponse updateEmployeePayroll(@Valid @RequestBody PayrollRequestBody body) {
+    public PayrollResponse updateEmployeePayroll(@Valid @RequestBody PayrollRequest body) {
         payrollService.updatePayroll(body);
         return new PayrollResponse("Updated successfully!");
     }

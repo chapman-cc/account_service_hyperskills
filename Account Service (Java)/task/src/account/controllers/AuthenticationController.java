@@ -1,8 +1,8 @@
 package account.controllers;
 
-import account.dtos.NewPasswordDTO;
-import account.dtos.PasswordChangedResponse;
-import account.dtos.SignupResponse;
+import account.requestBodies.NewPasswordRequest;
+import account.responses.PasswordChangedResponse;
+import account.responses.SignupResponse;
 import account.models.Employee;
 import account.services.EmployeeService;
 import jakarta.validation.Valid;
@@ -28,7 +28,7 @@ public class AuthenticationController {
 
     @PostMapping("/changepass")
     @ResponseStatus(HttpStatus.OK)
-    public PasswordChangedResponse changePassword(@AuthenticationPrincipal UserDetails userDetails, @Valid @RequestBody NewPasswordDTO body) {
+    public PasswordChangedResponse changePassword(@AuthenticationPrincipal UserDetails userDetails, @Valid @RequestBody NewPasswordRequest body) {
         return service.updatePassword(userDetails.getUsername(), body.getPassword());
     }
 }

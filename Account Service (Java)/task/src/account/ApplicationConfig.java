@@ -1,7 +1,6 @@
 package account;
 
 import account.dtos.PayrollDTO;
-import account.dtos.PayrollRequestBody;
 import account.models.Payroll;
 import org.modelmapper.Converter;
 import org.modelmapper.ModelMapper;
@@ -14,6 +13,8 @@ import java.util.Locale;
 
 @Configuration
 public class ApplicationConfig {
+
+
     @Bean
     ModelMapper modelMapper() {
         ModelMapper modelMapper = new ModelMapper();

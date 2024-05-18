@@ -45,19 +45,28 @@ public class Employee {
     @Column(name = "password")
     private String password;
 
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(
+            name = "employee_roles",
+            joinColumns = @JoinColumn(name = "employee_id")
+    )
+    @OrderBy(value = "ASC")
     @Column(name = "role")
-    private String role;
-
+    private List<String> roles;
 
     @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL)
     private List<Payroll> payrolls;
 
     public Employee(String name, String lastname, String email, String password, String role) {
+        this(name, lastname, email, password, new ArrayList<>(List.of(role)));
+    }
+
+    public Employee(String name, String lastname, String email, String password, List<String> roles) {
         this.name = name;
         this.lastname = lastname;
         this.email = email;
         this.password = password;
-        this.role = role;
+        this.roles = roles;
     }
 
     public void addPayroll(Payroll payroll) {
@@ -70,13 +79,27 @@ public class Employee {
         payrolls.add(payroll);
     }
 
+    public void addPayrolls(List<Payroll> payrolls) {
+        payrolls.forEach(this::addPayroll);
+    }
+
     public void setPayrolls(List<Payroll> payrolls) {
         this.payrolls = payrolls;
         for (Payroll payroll : payrolls) {
             payroll.setEmployee(this);
         }
     }
-    public void addPayrolls(List<Payroll> payrolls) {
-        payrolls.forEach(this::addPayroll);
+
+    @Deprecated
+    public void addRole(String role) {
+        if (this.roles == null) {
+            this.roles = new ArrayList<>();
+        }
+        this.roles.add(role);
+    }
+
+    @Deprecated
+    public void removeRole(String newRole) {
+        this.roles.remove(newRole);
     }
 }

@@ -1,8 +1,8 @@
 package account.utils;
 
 import account.dtos.PayrollDTO;
-import account.dtos.PayrollRequestBody;
-import account.dtos.SignupResponse;
+import account.requestBodies.PayrollRequest;
+import account.responses.SignupResponse;
 import account.models.Employee;
 import account.models.Payroll;
 import org.junit.jupiter.api.BeforeEach;
@@ -10,6 +10,8 @@ import org.junit.jupiter.api.Test;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -50,7 +52,7 @@ public class ModelMapperTest {
 
     @Test
     void canConvertPayrollToPayrollRequestBody (){
-        PayrollRequestBody body = modelMapper.map(payroll, PayrollRequestBody.class);
+        PayrollRequest body = modelMapper.map(payroll, PayrollRequest.class);
 
         assertThat(body.getPeriod()).isEqualTo(payroll.getPeriod());
         assertThat(body.getSalary()).isEqualTo(payroll.getSalary());
@@ -65,7 +67,7 @@ public class ModelMapperTest {
                 .lastname("Doe")
                 .email("johndoe@acme.com")
                 .password("secretpassword")
-                .role("USER")
+                .roles(List.of("USER"))
                 .build();
         SignupResponse response = modelMapper.map(employee, SignupResponse.class);
 
@@ -73,5 +75,7 @@ public class ModelMapperTest {
         assertThat(response.getLastname()).isEqualTo(employee.getLastname());
         assertThat(response.getEmail()).isEqualTo(employee.getEmail());
         assertThat(response.getId()).isEqualTo(employee.getId());
+        assertThat(response.getRoles()).isEqualTo(employee.getRoles());
     }
+
 }

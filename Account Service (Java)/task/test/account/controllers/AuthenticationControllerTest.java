@@ -1,12 +1,13 @@
 package account.controllers;
 
-import account.dtos.BadRequestResponse;
-import account.dtos.NewPasswordDTO;
-import account.dtos.PasswordChangedResponse;
-import account.dtos.SignupResponse;
+import account.responses.HttpErrorResponse;
+import account.requestBodies.NewPasswordRequest;
+import account.responses.PasswordChangedResponse;
+import account.responses.SignupResponse;
 import account.models.Employee;
 import account.repositories.EmployeeRepository;
 import account.services.EmployeeService;
+import account.utils.EmployeeFaker;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -19,6 +20,7 @@ import org.springframework.test.context.TestPropertySource;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -37,6 +39,9 @@ class AuthenticationControllerTest {
     @Autowired
     private EmployeeService employeeService;
 
+    @Autowired
+    private EmployeeFaker faker;
+
     @BeforeEach
     void setUp() {
     }
@@ -49,7 +54,8 @@ class AuthenticationControllerTest {
     @Test
     void canRegisterNewUser() {
         String url = "http://localhost:%d/api/auth/signup".formatted(port);
-        Employee employee = new Employee("John", "Doe", "john@acme.com", "passwordabcdefghl", "USER");
+        Employee employee = faker.generateEmployee();
+
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<Employee> request = new HttpEntity<>(employee, headers);
@@ -63,7 +69,7 @@ class AuthenticationControllerTest {
         assertThat(body.getName()).isEqualTo(employee.getName());
         assertThat(body.getLastname()).isEqualTo(employee.getLastname());
         assertThat(body.getEmail()).isEqualTo(employee.getEmail());
-
+        assertThat(body.getRoles()).isEqualTo(List.of("ADMINISTRATOR"));
     }
 
     @Test
@@ -79,7 +85,7 @@ class AuthenticationControllerTest {
 
 
         ResponseEntity<Employee> response1 = restTemplate.postForEntity(url, request1, Employee.class);
-        ResponseEntity<BadRequestResponse> response2 = restTemplate.postForEntity(url, request2, BadRequestResponse.class);
+        ResponseEntity<HttpErrorResponse> response2 = restTemplate.postForEntity(url, request2, HttpErrorResponse.class);
 
         assertThat(response1.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response2.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
@@ -93,13 +99,14 @@ class AuthenticationControllerTest {
     @Test
     void willNotAcceptIncorrectEmailDomainName() throws MalformedURLException {
         String url = "http://localhost:%d/api/auth/signup".formatted(port);
-        Employee employee = new Employee("mary", "p", "mary@amce.com", "passwordabcdefghl", "USER");
+        Employee employee = faker.generateEmployee();
+        employee.setEmail("mary@amce.com");
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<Employee> request = new HttpEntity<>(employee, headers);
 
-        ResponseEntity<BadRequestResponse> response = restTemplate.postForEntity(url, request, BadRequestResponse.class);
+        ResponseEntity<HttpErrorResponse> response = restTemplate.postForEntity(url, request, HttpErrorResponse.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(response.getBody())
@@ -112,13 +119,14 @@ class AuthenticationControllerTest {
     @Test
     void willNotAcceptPasswordOfLength12() throws MalformedURLException {
         String url = "http://localhost:%d/api/auth/signup".formatted(port);
-        Employee employee = new Employee("John", "Doe", "j@acme.com", "password", "USER");
+        Employee employee = faker.generateEmployee();
+        employee.setPassword("password");
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<Employee> request = new HttpEntity<>(employee, headers);
 
-        ResponseEntity<BadRequestResponse> response = restTemplate.postForEntity(url, request, BadRequestResponse.class);
+        ResponseEntity<HttpErrorResponse> response = restTemplate.postForEntity(url, request, HttpErrorResponse.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(response.getBody())
@@ -143,8 +151,8 @@ class AuthenticationControllerTest {
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setBasicAuth(email, originalPassword);
 
-        NewPasswordDTO body = new NewPasswordDTO(newPassword);
-        HttpEntity<NewPasswordDTO> request = new HttpEntity<>(body, headers);
+        NewPasswordRequest body = new NewPasswordRequest(newPassword);
+        HttpEntity<NewPasswordRequest> request = new HttpEntity<>(body, headers);
 
         // Act
         ResponseEntity<PasswordChangedResponse> response = restTemplate.postForEntity(url, request, PasswordChangedResponse.class);
@@ -172,15 +180,15 @@ class AuthenticationControllerTest {
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setBasicAuth(email, originalPassword);
 
-        NewPasswordDTO body = new NewPasswordDTO(newPassword);
-        HttpEntity<NewPasswordDTO> request = new HttpEntity<>(body, headers);
+        NewPasswordRequest body = new NewPasswordRequest(newPassword);
+        HttpEntity<NewPasswordRequest> request = new HttpEntity<>(body, headers);
 
         // Act
-        ResponseEntity<BadRequestResponse> response = restTemplate.postForEntity(url, request, BadRequestResponse.class);
+        ResponseEntity<HttpErrorResponse> response = restTemplate.postForEntity(url, request, HttpErrorResponse.class);
 
         // Assert
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-        BadRequestResponse responseBody = response.getBody();
+        HttpErrorResponse responseBody = response.getBody();
         assertThat(responseBody).isNotNull();
         assertThat(responseBody.status()).isEqualTo(400);
         assertThat(responseBody.error()).isEqualTo("Bad Request");
@@ -191,10 +199,11 @@ class AuthenticationControllerTest {
     void cannotRegisterWithBreachedPassword() {
         // Arrange
         String url = "http://localhost:%d/api/auth/signup".formatted(port);
-        final String email = "john@acme.com";
+
         final String password = "PasswordForJanuary";
 
-        Employee employee = new Employee("John", "Doe", email, password, "USER");
+        Employee employee = faker.generateEmployee();
+        employee.setPassword(password);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -202,11 +211,11 @@ class AuthenticationControllerTest {
         HttpEntity<Employee> request = new HttpEntity<>(employee, headers);
 
         // Act
-        ResponseEntity<BadRequestResponse> response = restTemplate.postForEntity(url, request, BadRequestResponse.class);
+        ResponseEntity<HttpErrorResponse> response = restTemplate.postForEntity(url, request, HttpErrorResponse.class);
 
         // Assert
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-        BadRequestResponse responseBody = response.getBody();
+        HttpErrorResponse responseBody = response.getBody();
         assertThat(responseBody).isNotNull();
         assertThat(responseBody.status()).isEqualTo(400);
         assertThat(responseBody.error()).isEqualTo("Bad Request");
@@ -227,15 +236,15 @@ class AuthenticationControllerTest {
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setBasicAuth(email, password);
 
-        NewPasswordDTO body = new NewPasswordDTO(password);
-        HttpEntity<NewPasswordDTO> request = new HttpEntity<>(body, headers);
+        NewPasswordRequest body = new NewPasswordRequest(password);
+        HttpEntity<NewPasswordRequest> request = new HttpEntity<>(body, headers);
 
         // Act
-        ResponseEntity<BadRequestResponse> response = restTemplate.postForEntity(url, request, BadRequestResponse.class);
+        ResponseEntity<HttpErrorResponse> response = restTemplate.postForEntity(url, request, HttpErrorResponse.class);
 
         // Assert
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-        BadRequestResponse responseBody = response.getBody();
+        HttpErrorResponse responseBody = response.getBody();
         assertThat(responseBody).isNotNull();
         assertThat(responseBody.status()).isEqualTo(400);
         assertThat(responseBody.error()).isEqualTo("Bad Request");

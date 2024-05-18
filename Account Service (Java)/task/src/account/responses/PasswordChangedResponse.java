@@ -1,4 +1,4 @@
-package account.dtos;
+package account.responses;
 
 
 import lombok.Builder;

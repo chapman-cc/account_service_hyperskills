@@ -1,9 +1,7 @@
-package account.dtos;
+package account.requestBodies;
 
-import account.models.Employee;
 import account.utils.Regex;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
@@ -18,7 +16,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Data
 @Builder
-public class PayrollRequestBody {
+public class PayrollRequest {
     @NotNull
     @Pattern(regexp = Regex.PAYROLL_PERIOD, message = "incorrect period")
     private String period;

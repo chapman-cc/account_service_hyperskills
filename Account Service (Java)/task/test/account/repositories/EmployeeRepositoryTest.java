@@ -2,6 +2,7 @@ package account.repositories;
 
 import account.models.Employee;
 import account.models.Payroll;
+import account.utils.EmployeeFaker;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +11,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -17,6 +19,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class EmployeeRepositoryTest {
     private final EmployeeRepository employeeRepository;
     private final PayrollRepository payrollRepository;
+
+    private final EmployeeFaker faker = new EmployeeFaker();
 
     @Autowired
     public EmployeeRepositoryTest(EmployeeRepository employeeRepository, PayrollRepository payrollRepository) {
@@ -31,7 +35,7 @@ public class EmployeeRepositoryTest {
 
     @Test
     void shouldExistsByEmail() {
-        Employee employee = getEmployee();
+        Employee employee = faker.generateEmployee();
         employeeRepository.save(employee);
 
         assertThat(employeeRepository.existsByEmailIgnoreCase(employee.getEmail())).isTrue();
@@ -39,7 +43,7 @@ public class EmployeeRepositoryTest {
 
     @Test
     void shouldNotExistsByEmail() {
-        Employee employee = getEmployee();
+        Employee employee = faker.generateEmployee();
         employeeRepository.save(employee);
 
         assertThat(employeeRepository.existsByEmailIgnoreCase("mary@acme.com")).isFalse();
@@ -48,7 +52,7 @@ public class EmployeeRepositoryTest {
 
     @Test
     void shouldFindByEmailIgnoreCase() {
-        Employee employee = getEmployee();
+        Employee employee = faker.generateEmployee();
         employeeRepository.save(employee);
 
         String email = employee.getEmail();
@@ -64,15 +68,11 @@ public class EmployeeRepositoryTest {
 
     @Test
     void canSaveEmployeePayrollsCascade() {
-        Employee employee1 = getEmployee();
-        Employee employee2 = new Employee("Mary", "Moppin", "marymoppin@acme.com", "passwordsecret", "USER");
+        Employee employee1 = faker.generateEmployee();
+        Employee employee2 = faker.generateEmployee();
 
-        employee1.addPayroll(new Payroll("01-2024", 1000L));
-        employee1.addPayroll(new Payroll("02-2024", 1000L));
-        employee1.addPayroll(new Payroll("03-2024", 1000L));
-
-        employee2.addPayroll(new Payroll("05-2024", 1000L));
-        employee2.addPayroll(new Payroll("06-2024", 1000L));
+        employee1.setPayrolls(faker.generatePayrolls(3));
+        employee2.setPayrolls(faker.generatePayrolls(2));
 
         employeeRepository.saveAll(List.of(employee1, employee2));
 
@@ -87,14 +87,26 @@ public class EmployeeRepositoryTest {
         assertThat(savedEmployee2.getPayrolls().size()).isEqualTo(2);
     }
 
+    @Test
+    void canGetAllEmployeeOrderByIdAsc() {
+        List<Employee> employees = Stream.generate(faker::generateEmployee)
+                .limit(20)
+                .toList();
 
-    private Employee getEmployee() {
-        return new Employee(
-                "John",
-                "Doe",
-                "john@acme.com",
-                "password12345",
-                "ROLE_ADMIN"
-        );
+        employeeRepository.saveAll(employees);
+        employees = Stream.generate(faker::generateEmployee)
+                .limit(50)
+                .toList();
+
+        employeeRepository.saveAll(employees);
+
+        List<Employee> savedEmployees = new ArrayList<>();
+        employeeRepository.findAll().forEach(savedEmployees::add);
+
+        for (int i = 1; i < savedEmployees.size(); i++) {
+            Employee prev = savedEmployees.get(i - 1);
+            Employee curr = savedEmployees.get(i);
+            assertThat(prev.getId()).isLessThan(curr.getId());
+        }
     }
 }

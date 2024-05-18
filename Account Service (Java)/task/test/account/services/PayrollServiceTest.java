@@ -1,7 +1,7 @@
 package account.services;
 
 import account.dtos.PayrollDTO;
-import account.dtos.PayrollRequestBody;
+import account.requestBodies.PayrollRequest;
 import account.exceptions.DuplicateEmployeePeriodException;
 import account.models.Employee;
 import account.models.Payroll;
@@ -55,8 +55,8 @@ class PayrollServiceTest {
         Payroll payroll2 = Payroll.builder().period("04-2024").salary(1000L).employee(employee).build();
         Payroll payroll3 = Payroll.builder().period("05-2024").salary(1000L).employee(employee).build();
 
-        List<PayrollRequestBody> bodies = Stream.of(payroll1, payroll2, payroll3)
-                .map(payroll -> modelMapper.map(payroll, PayrollRequestBody.class))
+        List<PayrollRequest> bodies = Stream.of(payroll1, payroll2, payroll3)
+                .map(payroll -> modelMapper.map(payroll, PayrollRequest.class))
                 .toList();
 
 
@@ -83,8 +83,8 @@ class PayrollServiceTest {
         Payroll payroll1 = Payroll.builder().period(period).salary(1000L).employee(employee).build();
         Payroll payroll2 = Payroll.builder().period(period).salary(1500L).employee(employee).build();
 
-        List<PayrollRequestBody> bodies = Stream.of(payroll1, payroll2)
-                .map(payroll -> modelMapper.map(payroll, PayrollRequestBody.class))
+        List<PayrollRequest> bodies = Stream.of(payroll1, payroll2)
+                .map(payroll -> modelMapper.map(payroll, PayrollRequest.class))
                 .toList();
 
         when(employeeService.validateEmails(anyList())).thenReturn(true);
@@ -101,7 +101,7 @@ class PayrollServiceTest {
     void canUpdatePayroll() {
         String period = "05-2024";
         Payroll payroll = Payroll.builder().period(period).salary(1000L).employee(employee).build();
-        PayrollRequestBody payrollRequestBody = modelMapper.map(payroll, PayrollRequestBody.class);
+        PayrollRequest payrollRequestBody = modelMapper.map(payroll, PayrollRequest.class);
 
         when(employeeService.validateEmails(anyList())).thenReturn(true);
         when(employeeService.findByEmail(eq(payroll.getEmployee().getEmail()))).thenReturn(Optional.of(employee));
@@ -146,7 +146,7 @@ class PayrollServiceTest {
     @Test
     void canGetPayrollsByEmailAndPeriod() {
         Payroll payroll = Payroll.builder().id(1L).period("05-2024").salary(123456L).employee(employee).build();
-        PayrollRequestBody.builder().salary(payroll.getSalary()).period(payroll.getPeriod()).employeeEmail(payroll.getEmployee().getEmail()).build();
+        PayrollRequest.builder().salary(payroll.getSalary()).period(payroll.getPeriod()).employeeEmail(payroll.getEmployee().getEmail()).build();
 
         when(employeeService.findByEmail(anyString())).thenReturn(Optional.of(employee));
         when(payrollRepository.findByEmployeeEmailAndPeriod(anyString(), anyString())).thenReturn(Optional.of(payroll));

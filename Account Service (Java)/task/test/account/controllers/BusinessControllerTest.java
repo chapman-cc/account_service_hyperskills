@@ -1,7 +1,7 @@
 package account.controllers;
 
 import account.dtos.PayrollDTO;
-import account.dtos.PayrollRequestBody;
+import account.requestBodies.PayrollRequest;
 import account.models.Payroll;
 import account.services.PayrollService;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -46,7 +46,7 @@ class BusinessControllerTest {
 
     private PayrollDTO payrollDTO;
 
-    private PayrollRequestBody body;
+    private PayrollRequest body;
 
     @BeforeEach
     void setUp() {
@@ -56,7 +56,7 @@ class BusinessControllerTest {
                 .period("May-2021")
                 .salary("1234 dollar(s) 56 cent(s)")
                 .build();
-        body = PayrollRequestBody.builder()
+        body = PayrollRequest.builder()
                 .employeeEmail("john@acme.com")
                 .salary(1000L)
                 .period("01-2024")
@@ -105,7 +105,7 @@ class BusinessControllerTest {
     @Test
     void canPutPayroll() throws Exception {
 
-        when(payrollService.updatePayroll(any(PayrollRequestBody.class))).thenReturn(any(Payroll.class));
+        when(payrollService.updatePayroll(any(PayrollRequest.class))).thenReturn(any(Payroll.class));
 
         mockMvc.perform(put("/api/acct/payments")
                         .contentType(MediaType.APPLICATION_JSON)
