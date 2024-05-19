@@ -37,7 +37,7 @@ public class Employee {
 
     @Email(message = "Email is not valid", regexp = Regex.EMPLOYEE_EMAIL)
     @NotBlank(message = "Email is mandatory")
-    @Column(name = "email")
+    @Column(name = "email",  unique = true)
     private String email;
 
     @NotBlank(message = "Password is mandatory")
