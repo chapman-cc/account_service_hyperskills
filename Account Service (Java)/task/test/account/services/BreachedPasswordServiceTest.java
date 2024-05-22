@@ -13,7 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest
 class BreachedPasswordServiceTest {
 
-    private BreachedPasswordService breachedPasswordService;
+    private final BreachedPasswordService breachedPasswordService;
 
     @Autowired
     public BreachedPasswordServiceTest(BreachedPasswordService breachedPasswordService) {

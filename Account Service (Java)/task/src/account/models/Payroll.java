@@ -10,6 +10,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 
 @Entity
@@ -19,6 +20,7 @@ import java.time.format.DateTimeFormatter;
 @Builder
 @Table(name = "payrolls")
 public class Payroll {
+    public static final DateTimeFormatter PERIOD_FORMATTER = DateTimeFormatter.ofPattern("MM-yyyy");
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -27,7 +29,6 @@ public class Payroll {
 
     @NotNull
     @Column(name = "period")
-    @Pattern(regexp = Regex.PAYROLL_PERIOD, message = "incorrect period")
     private String period;
 
     @NotNull
@@ -35,23 +36,25 @@ public class Payroll {
     @Column(name = "salary")
     private Long salary;
 
-//    @Email(regexp = Regex.EMPLOYEE_EMAIL, message = "incorrect email")
-//    @NotNull
-//    @Column(name = "employee_email")
-//    private String employeeEmail;
-
-    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.DETACH, CascadeType.REFRESH})
-    @JoinColumn(name = "employee_id")
+    @ManyToOne(cascade = {CascadeType.REFRESH, CascadeType.DETACH})
+    @JoinColumn(name = "employee_id", nullable = false)
     private Employee employee;
+
 
     /**
      * Constructor for Payroll
      *
-     * @param period
-     * @param salary
+     * @param period YearMonth
+     * @param salary Long
      */
     public Payroll(String period, Long salary) {
         this.period = period;
         this.salary = salary;
+    }
+
+
+    public void setEmployee(Employee employee) {
+        this.employee = employee;
+        employee.addPayroll(this);
     }
 }

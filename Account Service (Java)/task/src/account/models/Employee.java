@@ -37,7 +37,7 @@ public class Employee {
 
     @Email(message = "Email is not valid", regexp = Regex.EMPLOYEE_EMAIL)
     @NotBlank(message = "Email is mandatory")
-    @Column(name = "email",  unique = true)
+    @Column(name = "email", unique = true)
     private String email;
 
     @NotBlank(message = "Password is mandatory")
@@ -57,6 +57,10 @@ public class Employee {
     @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL)
     private List<Payroll> payrolls;
 
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "login_information_id")
+    private LoginInformation loginInformation;
+
     public Employee(String name, String lastname, String email, String password, String role) {
         this(name, lastname, email, password, new ArrayList<>(List.of(role)));
     }
@@ -69,28 +73,31 @@ public class Employee {
         this.roles = roles;
     }
 
-    public void addPayroll(Payroll payroll) {
+    public List<Payroll> getPayrolls() {
         if (payrolls == null) {
             payrolls = new ArrayList<>();
         }
-        if (payroll.getEmployee() != this) {
-            payroll.setEmployee(this);
-        }
-        payrolls.add(payroll);
-    }
-
-    public void addPayrolls(List<Payroll> payrolls) {
-        payrolls.forEach(this::addPayroll);
+        return payrolls;
     }
 
     public void setPayrolls(List<Payroll> payrolls) {
         this.payrolls = payrolls;
         for (Payroll payroll : payrolls) {
-            payroll.setEmployee(this);
+            if (payroll.getEmployee() != this) {
+                payroll.setEmployee(this);
+            }
         }
     }
 
-    @Deprecated
+    public void addPayroll(Payroll payroll) {
+        if (payrolls == null) {
+            payrolls = new ArrayList<>();
+        }
+        if (!payrolls.contains(payroll)) {
+            payrolls.add(payroll);
+        }
+    }
+
     public void addRole(String role) {
         if (this.roles == null) {
             this.roles = new ArrayList<>();
@@ -98,8 +105,14 @@ public class Employee {
         this.roles.add(role);
     }
 
-    @Deprecated
     public void removeRole(String newRole) {
         this.roles.remove(newRole);
+    }
+
+    public LoginInformation getLoginInformation() {
+        if (loginInformation == null) {
+            loginInformation = new LoginInformation();
+        }
+        return loginInformation;
     }
 }

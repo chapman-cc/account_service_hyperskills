@@ -2,19 +2,18 @@ package account.utils;
 
 
 import account.models.Employee;
+import account.models.LoginInformation;
 import account.models.Payroll;
 import com.github.javafaker.Faker;
 import org.springframework.stereotype.Component;
 
 import java.time.Year;
 import java.time.YearMonth;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
 @Component
 public class EmployeeFaker {
-    public static final DateTimeFormatter PAYROLL_PERIOD_FORMATTER = DateTimeFormatter.ofPattern("MM-yyyy");
     private final Faker faker = new Faker();
 
     public Employee generateEmployee() {
@@ -28,6 +27,7 @@ public class EmployeeFaker {
                 .email(email)
                 .password(faker.internet().password(13, 20))
                 .roles(roles)
+                .loginInformation(new LoginInformation())
                 .build();
     }
 
@@ -76,8 +76,8 @@ public class EmployeeFaker {
     }
 
     public Payroll generatePayrollFromPrev(Payroll payroll) {
-        YearMonth period = YearMonth.parse(payroll.getPeriod(), PAYROLL_PERIOD_FORMATTER);
-        String newPeriod = period.plusMonths(1).format(PAYROLL_PERIOD_FORMATTER);
+        YearMonth period = YearMonth.parse(payroll.getPeriod(), Payroll.PERIOD_FORMATTER);
+        String newPeriod = period.plusMonths(1).format(Payroll.PERIOD_FORMATTER);
 
         return Payroll.builder()
                 .salary(payroll.getSalary())

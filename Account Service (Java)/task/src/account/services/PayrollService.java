@@ -2,13 +2,13 @@ package account.services;
 
 
 import account.dtos.PayrollDTO;
-import account.requestBodies.PayrollRequest;
 import account.exceptions.DuplicateEmployeePeriodException;
 import account.exceptions.EmployeeEmailNotValidException;
 import account.exceptions.PayrollRecordNotFound;
 import account.models.Employee;
 import account.models.Payroll;
 import account.repositories.PayrollRepository;
+import account.requestBodies.PayrollRequest;
 import jakarta.transaction.Transactional;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,7 +26,7 @@ public class PayrollService {
 
     private final PayrollRepository payrollRepository;
 
-    private final ModelMapper  modelMapper;
+    private final ModelMapper modelMapper;
 
     @Autowired
     public PayrollService(EmployeeService employeeService, PayrollRepository payrollRepository, ModelMapper modelMapper) {
@@ -76,11 +76,9 @@ public class PayrollService {
                         .orElseThrow(() -> new EmployeeEmailNotValidException("Employee not record"));
             }
 
-            pendingPayrolls.add(Payroll.builder()
-                    .period(body.getPeriod())
-                    .salary(body.getSalary())
-                    .employee(employee)
-                    .build());
+            Payroll payroll = new Payroll(body.getPeriod(), body.getSalary());
+            payroll.setEmployee(employee);
+            pendingPayrolls.add(payroll);
         }
 
         Iterable<Payroll> saved = payrollRepository.saveAll(pendingPayrolls);

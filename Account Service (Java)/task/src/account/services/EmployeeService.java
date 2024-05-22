@@ -5,9 +5,11 @@ import account.exceptions.*;
 import account.models.Employee;
 import account.repositories.EmployeeRepository;
 import account.requestBodies.UpdateRoleRequest;
+import account.requestBodies.UserLockOperation;
 import account.responses.PasswordChangedResponse;
 import account.responses.RemoveEmployeeResponse;
 import account.responses.SignupResponse;
+import account.responses.UserLockResponse;
 import account.utils.RoleUtil;
 import jakarta.transaction.Transactional;
 import org.modelmapper.ModelMapper;
@@ -24,13 +26,17 @@ public class EmployeeService {
     private final EmployeeRepository employeeRepository;
     private final PasswordEncoder encoder;
     private final BreachedPasswordService breachedPasswordService;
+    private final SecurityEventService securityEventService;
     private final ModelMapper modelMapper;
-    private final RoleUtil  roleUtil;
+    private final RoleUtil roleUtil;
+
+
     @Autowired
-    public EmployeeService(EmployeeRepository repo, PasswordEncoder encoder, BreachedPasswordService breachedPasswordService, ModelMapper modaMapper, RoleUtil roleUtil) {
+    public EmployeeService(EmployeeRepository repo, PasswordEncoder encoder, BreachedPasswordService breachedPasswordService, SecurityEventService securityEventService, ModelMapper modaMapper, RoleUtil roleUtil) {
         this.employeeRepository = repo;
         this.encoder = encoder;
         this.breachedPasswordService = breachedPasswordService;
+        this.securityEventService = securityEventService;
         this.modelMapper = modaMapper;
         this.roleUtil = roleUtil;
     }
@@ -83,6 +89,11 @@ public class EmployeeService {
         }
         String encodedPassword = encoder.encode(password);
         employee.setPassword(encodedPassword);
+        return simpleUpdate(employee);
+    }
+
+    @Transactional
+    public Employee simpleUpdate(Employee employee) {
         return employeeRepository.save(employee);
     }
 
@@ -95,6 +106,7 @@ public class EmployeeService {
         return list;
     }
 
+    @Transactional
     public RemoveEmployeeResponse removeEmployee(String email) {
         Employee employee = employeeRepository.findByEmailIgnoreCase(email)
                 .orElseThrow(EmployeeNotFoundException::new);
@@ -105,6 +117,7 @@ public class EmployeeService {
         return new RemoveEmployeeResponse(employee.getEmail());
     }
 
+    @Transactional
     public EmployeeDTO updateRole(UpdateRoleRequest requestBody) {
         final String email = requestBody.getUser();
         final String role = requestBody.getRole();
@@ -116,12 +129,13 @@ public class EmployeeService {
                 .orElseThrow(EmployeeNotFoundException::new);
 
         return switch (requestBody.getOperation()) {
-            case "GRANT"    ->      grantRoleToEmployee(role,employee);
-            case "REMOVE"   ->      removeRoleFromEmployee(role, employee);
+            case "GRANT" -> grantRoleToEmployee(role, employee);
+            case "REMOVE" -> removeRoleFromEmployee(role, employee);
             default -> throw new IllegalArgumentException();
         };
     }
 
+    @Transactional
     private EmployeeDTO grantRoleToEmployee(String role, Employee employee) {
         // cannot combine administrative and business roles
         if (employee.getRoles().contains("ADMINISTRATOR")) {
@@ -136,6 +150,8 @@ public class EmployeeService {
         Employee saved = employeeRepository.save(employee);
         return modelMapper.map(saved, EmployeeDTO.class);
     }
+
+    @Transactional
     private EmployeeDTO removeRoleFromEmployee(String role, Employee employee) {
         // cannot remove ADMINISTRATOR role
         if (role.equals("ADMINISTRATOR")) {
@@ -152,5 +168,51 @@ public class EmployeeService {
         employee.getRoles().remove(role);
         Employee saved = employeeRepository.save(employee);
         return modelMapper.map(saved, EmployeeDTO.class);
+    }
+
+    @Transactional
+    public UserLockResponse updateUserLockStatus(UserLockOperation operation) {
+        Employee employee = findByEmail(operation.getUser()).orElseThrow(EmployeeNotFoundException::new);
+
+        if (operation.getOperation().equals("LOCK")) {
+            lockUser(employee);
+        } else {
+            unlockUser(employee);
+        }
+
+        return new UserLockResponse(operation.getUser(), employee.getLoginInformation().isLocked());
+    }
+
+    private void lockUser(Employee employee) {
+        if (employee.getRoles().contains("ADMINISTRATOR")) {
+            throw new RuntimeException("Can't lock the ADMINISTRATOR!");
+        }
+        employee.getLoginInformation().setLocked(true);
+        simpleUpdate(employee);
+    }
+
+    private void unlockUser(Employee employee) {
+        employee.getLoginInformation().setLocked(false);
+        simpleUpdate(employee);
+    }
+
+    @Transactional
+    public void resetLoginAttempts(String principal) {
+        Employee employee = findByEmail(principal).orElseThrow(EmployeeNotFoundException::new);
+        if (employee.getLoginInformation().getLoginAttempts() > 0) {
+            employee.getLoginInformation().resetLoginAttempts();
+            simpleUpdate(employee);
+        }
+    }
+
+    @Transactional
+    public void updateLoginAttempts(String principal) {
+        Employee employee = findByEmail(principal).orElseThrow(EmployeeNotFoundException::new);
+        employee.getLoginInformation().increaseLoginAttempts();
+        if (employee.getLoginInformation().getLoginAttempts() < 5) {
+            simpleUpdate(employee);
+        } else {
+            lockUser(employee);
+        }
     }
 }

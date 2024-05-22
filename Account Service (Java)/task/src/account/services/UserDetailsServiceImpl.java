@@ -1,6 +1,7 @@
 package account.services;
 
 import account.models.Employee;
+import account.models.LoginInformation;
 import account.repositories.EmployeeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.User;
@@ -28,6 +29,8 @@ public class UserDetailsServiceImpl implements UserDetailsService {
                 .username(employee.getEmail())
                 .password(employee.getPassword())
                 .roles(employee.getRoles().toArray(new String[0]))
+                .disabled(!employee.getLoginInformation().isEnabled())
+                .accountLocked(employee.getLoginInformation().isLocked())
                 .build();
     }
 

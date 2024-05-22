@@ -1,11 +1,15 @@
 package account.controllers;
 
-import account.responses.HttpErrorResponse;
+import account.models.Employee;
+import account.models.LoginInformation;
+import account.models.SecurityEvent;
+import account.repositories.EmployeeRepository;
+import account.repositories.LoginInformationRepository;
+import account.repositories.SecurityEventRepository;
 import account.requestBodies.NewPasswordRequest;
+import account.responses.HttpErrorResponse;
 import account.responses.PasswordChangedResponse;
 import account.responses.SignupResponse;
-import account.models.Employee;
-import account.repositories.EmployeeRepository;
 import account.services.EmployeeService;
 import account.utils.EmployeeFaker;
 import org.junit.jupiter.api.AfterEach;
@@ -35,6 +39,11 @@ class AuthenticationControllerTest {
 
     @Autowired
     private EmployeeRepository employeeRepository;
+    @Autowired
+    private LoginInformationRepository  loginInformationRepository;
+
+    @Autowired
+    private SecurityEventRepository securityEventRepository;
 
     @Autowired
     private EmployeeService employeeService;
@@ -49,6 +58,8 @@ class AuthenticationControllerTest {
     @AfterEach
     void tearDown() {
         employeeRepository.deleteAll();
+        loginInformationRepository.deleteAll();
+        securityEventRepository.deleteAll();
     }
 
     @Test
@@ -70,6 +81,28 @@ class AuthenticationControllerTest {
         assertThat(body.getLastname()).isEqualTo(employee.getLastname());
         assertThat(body.getEmail()).isEqualTo(employee.getEmail());
         assertThat(body.getRoles()).isEqualTo(List.of("ADMINISTRATOR"));
+    }
+
+    @Test
+    void willHaveSignupAOPRecord() {
+        String url = "http://localhost:%d/api/auth/signup".formatted(port);
+        Employee employee = faker.generateEmployee();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<Employee> request = new HttpEntity<>(employee, headers);
+
+        ResponseEntity<SignupResponse> response = restTemplate.postForEntity(url, request, SignupResponse.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        SecurityEvent securityEvent = securityEventRepository.findAll().iterator().next();
+
+        assertThat(securityEvent.getId()).isGreaterThan(0);
+        assertThat(securityEvent.getAction()).isEqualTo("CREATE_USER");
+        assertThat(securityEvent.getSubject()).isEqualTo("Anonymous");
+        assertThat(securityEvent.getObject()).isEqualTo(employee.getEmail());
+        assertThat(securityEvent.getPath()).isNotEmpty();
     }
 
     @Test
@@ -166,6 +199,39 @@ class AuthenticationControllerTest {
     }
 
     @Test
+    void willHaveChangePasswordRecord() {
+        // Arrange
+        String url = "http://localhost:%d/api/auth/changepass".formatted(port);
+        final String email = "john@acme.com";
+        final String originalPassword = "passwordabcdefghl";
+        String newPassword = "password12345678";
+
+        Employee employee = new Employee("John", "Doe", email, originalPassword, "USER");
+        employeeService.register(employee);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBasicAuth(email, originalPassword);
+
+        NewPasswordRequest body = new NewPasswordRequest(newPassword);
+        HttpEntity<NewPasswordRequest> request = new HttpEntity<>(body, headers);
+
+        // Act
+        ResponseEntity<PasswordChangedResponse> response = restTemplate.postForEntity(url, request, PasswordChangedResponse.class);
+
+        // Assert
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        SecurityEvent securityEvent = securityEventRepository.findAll().iterator().next();
+
+        assertThat(securityEvent.getId()).isGreaterThan(0);
+        assertThat(securityEvent.getAction()).isEqualTo("CHANGE_PASSWORD");
+        assertThat(securityEvent.getSubject()).isEqualTo(employee.getEmail());
+        assertThat(securityEvent.getObject()).isEqualTo(employee.getEmail());
+        assertThat(securityEvent.getPath()).isNotEmpty();
+    }
+
+    @Test
     void cannotChangePasswordOfLengthLessThan12() {
         // Arrange
         String url = "http://localhost:%d/api/auth/changepass".formatted(port);
@@ -223,31 +289,69 @@ class AuthenticationControllerTest {
     }
 
     @Test
-    void cannotChangePasswordWhenPasswordAreSame() {
+    void willIncreaseLoginFailAttempt() {
         // Arrange
         String url = "http://localhost:%d/api/auth/changepass".formatted(port);
         final String email = "john@acme.com";
         final String password = "passwordabcdefghl";
 
-        Employee employee = new Employee("John", "Doe", email, password, "USER");
+        Employee administrator = new Employee("John", "Doe", email, password, "USER");
+        Employee employee = faker.generateEmployee();
+
+        employeeService.register(administrator);
         employeeService.register(employee);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setBasicAuth(email, password);
+        headers.setBasicAuth(employee.getEmail(), "mistyped_password");
 
         NewPasswordRequest body = new NewPasswordRequest(password);
         HttpEntity<NewPasswordRequest> request = new HttpEntity<>(body, headers);
 
+        ResponseEntity<HttpErrorResponse> response = null;
         // Act
-        ResponseEntity<HttpErrorResponse> response = restTemplate.postForEntity(url, request, HttpErrorResponse.class);
+        for (int i = 0; i < 4; i++) {
+            response = restTemplate.postForEntity(url, request, HttpErrorResponse.class);
+        }
 
         // Assert
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-        HttpErrorResponse responseBody = response.getBody();
-        assertThat(responseBody).isNotNull();
-        assertThat(responseBody.status()).isEqualTo(400);
-        assertThat(responseBody.error()).isEqualTo("Bad Request");
-        assertThat(responseBody.message()).isEqualTo("The passwords must be different!");
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+
+        Employee found = employeeRepository.findById(employee.getId()).orElseThrow();
+        assertThat(found.getLoginInformation().getLoginAttempts()).isEqualTo(4);
+        assertThat(found.getLoginInformation().isLocked()).isFalse();
+    }
+
+    @Test
+    void willLockUserIfLoginFailed() {
+        // Arrange
+        String url = "http://localhost:%d/api/auth/changepass".formatted(port);
+        final String email = "john@acme.com";
+        final String password = "passwordabcdefghl";
+
+        Employee administrator = new Employee("John", "Doe", email, password, "USER");
+        Employee employee = faker.generateEmployee();
+        employeeService.register(administrator);
+        employeeService.register(employee);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBasicAuth(employee.getEmail(), "mistyped_password");
+
+        NewPasswordRequest body = new NewPasswordRequest(password);
+        HttpEntity<NewPasswordRequest> request = new HttpEntity<>(body, headers);
+
+        ResponseEntity<HttpErrorResponse> response = null;
+        // Act
+        for (int i = 0; i < 5; i++) {
+            response = restTemplate.postForEntity(url, request, HttpErrorResponse.class);
+        }
+
+        // Assert
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+
+        Employee found = employeeRepository.findById(employee.getId()).orElseThrow();
+        assertThat(found.getLoginInformation().getLoginAttempts()).isGreaterThan(4);
+        assertThat(found.getLoginInformation().isLocked()).isTrue();
     }
 }

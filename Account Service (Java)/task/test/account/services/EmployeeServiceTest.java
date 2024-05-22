@@ -6,9 +6,11 @@ import account.exceptions.RoleNotFoundException;
 import account.models.Employee;
 import account.repositories.EmployeeRepository;
 import account.requestBodies.UpdateRoleRequest;
+import account.requestBodies.UserLockOperation;
 import account.responses.PasswordChangedResponse;
 import account.responses.RemoveEmployeeResponse;
 import account.responses.SignupResponse;
+import account.responses.UserLockResponse;
 import account.utils.EmployeeFaker;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -180,34 +182,61 @@ class EmployeeServiceTest {
                 .contains(newRole);
     }
 
-//    @Test
-//    void canUpdateRemoveRole() {
-//        Employee employee = faker.generateEmployeeWithId();
-//        String deleteRole = "USER";
-//        employee.setRoles(new ArrayList<>(List.of("ACCOUNTANT", deleteRole)));
-//
-//        UpdateRoleRequest request = UpdateRoleRequest.builder()
-//                .user(employee.getEmail())
-//                .role(deleteRole)
-//                .operation("REMOVE")
-//                .build();
-//
-//        when(employeeRepository.findByEmailIgnoreCase(employee.getEmail())).thenReturn(Optional.of(employee));
-//        employee.getRoles().remove(deleteRole);
-//        when(employeeRepository.save(any(Employee.class))).thenReturn(employee);
-//
-//        EmployeeDTO dto = employeeService.updateRole(request);
-//        verify(employeeRepository).save(employee);
-//
-//        assertThat(dto).isNotNull()
-//                .hasFieldOrPropertyWithValue("name", employee.getName())
-//                .hasFieldOrPropertyWithValue("lastname", employee.getLastname())
-//                .hasFieldOrPropertyWithValue("email", employee.getEmail())
-//                .hasFieldOrProperty("roles");
-//        assertThat(dto.getRoles())
-//                .isNotEmpty()
-//                .doesNotContain(deleteRole);
-//    }
+    @Test
+    void canLockUser(){
+        Employee employee = faker.generateEmployeeWithId();
+        employee.getLoginInformation().setLocked(false);
+        UserLockOperation operation = UserLockOperation.builder()
+                .user(employee.getEmail())
+                .operation("LOCK")
+                .build();
+
+        when(employeeRepository.findByEmailIgnoreCase(employee.getEmail()))
+                .thenReturn(Optional.of(employee));
+
+        UserLockResponse userLockResponse = employeeService.updateUserLockStatus(operation);
+
+        assertThat(userLockResponse).isNotNull()
+                .hasFieldOrPropertyWithValue("status", "User %s locked!".formatted(employee.getEmail()));
+    }
+    @Test
+    void cannotLockUserForAdministrator(){
+        Employee employee = faker.generateEmployeeWithId();
+        employee.getLoginInformation().setLocked(false);
+        employee.setRoles(new ArrayList<>(List.of("ADMINISTRATOR")));
+        UserLockOperation operation = UserLockOperation.builder()
+                .user(employee.getEmail())
+                .operation("LOCK")
+                .build();
+
+        when(employeeRepository.findByEmailIgnoreCase(employee.getEmail()))
+                .thenReturn(Optional.of(employee));
+
+        assertThatThrownBy(() -> employeeService.updateUserLockStatus(operation)).hasMessage("Can't lock the ADMINISTRATOR!");
+
+    }
+    @Test
+    void canUpdateRemoveRole() {
+        Employee employee = faker.generateEmployeeWithId();
+        String deleteRole = "USER";
+        employee.setRoles(new ArrayList<>(List.of("ACCOUNTANT", deleteRole)));
+
+        when(employeeRepository.findByEmailIgnoreCase(employee.getEmail())).thenReturn(Optional.of(employee));
+        when(employeeRepository.save(any(Employee.class))).thenReturn(employee);
+
+        UpdateRoleRequest request = new UpdateRoleRequest(employee.getEmail(), deleteRole, "REMOVE");
+        EmployeeDTO dto = employeeService.updateRole(request);
+        verify(employeeRepository).save(any(Employee.class));
+
+        assertThat(dto).isNotNull()
+                .hasFieldOrPropertyWithValue("name", employee.getName())
+                .hasFieldOrPropertyWithValue("lastname", employee.getLastname())
+                .hasFieldOrPropertyWithValue("email", employee.getEmail())
+                .hasFieldOrProperty("roles");
+        assertThat(dto.getRoles())
+                .isNotEmpty()
+                .doesNotContain(deleteRole);
+    }
 
 
     @Test

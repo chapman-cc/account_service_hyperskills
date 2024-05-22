@@ -50,7 +50,7 @@ public class EmployeeFakerTest {
     @Test
     void canGeneratePayrolls() {
         int count = 10;
-        DateTimeFormatter fmt = EmployeeFaker.PAYROLL_PERIOD_FORMATTER;
+        DateTimeFormatter fmt = Payroll.PERIOD_FORMATTER;
         List<Payroll> payrolls = faker.generatePayrolls(count);
 
         assertThat(payrolls).hasSize(count);

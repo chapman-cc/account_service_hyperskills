@@ -3,6 +3,7 @@ package account.repositories;
 import account.models.Employee;
 import account.models.Payroll;
 import account.utils.EmployeeFaker;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +12,8 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -20,16 +23,19 @@ public class EmployeeRepositoryTest {
     private final EmployeeRepository employeeRepository;
     private final PayrollRepository payrollRepository;
 
+    private final EntityManager entityManager;
     private final EmployeeFaker faker = new EmployeeFaker();
 
     @Autowired
-    public EmployeeRepositoryTest(EmployeeRepository employeeRepository, PayrollRepository payrollRepository) {
+    public EmployeeRepositoryTest(EmployeeRepository employeeRepository, PayrollRepository payrollRepository, EntityManager entityManager) {
         this.employeeRepository = employeeRepository;
         this.payrollRepository = payrollRepository;
+        this.entityManager = entityManager;
     }
 
     @AfterEach
     void tearDown() {
+        payrollRepository.deleteAll();
         employeeRepository.deleteAll();
     }
 
@@ -56,14 +62,14 @@ public class EmployeeRepositoryTest {
         employeeRepository.save(employee);
 
         String email = employee.getEmail();
-        Optional<Employee> optional = employeeRepository.findByEmailIgnoreCase(email);
-        Optional<Employee> optional1 = employeeRepository.findByEmailIgnoreCase(email.toUpperCase());
+        Employee employeeLowerCaseRef = employeeRepository.findByEmailIgnoreCase(email).orElseThrow();
+        Employee employeeUpperCaseRef = employeeRepository.findByEmailIgnoreCase(email.toUpperCase()).orElseThrow();
 
-        assertThat(optional.isPresent()).isTrue();
-        assertThat(optional.get()).isEqualTo(employee);
+        assertThat(employeeLowerCaseRef).isNotNull();
+        assertThat(employeeLowerCaseRef).isEqualTo(employee);
 
-        assertThat(optional1.isPresent()).isTrue();
-        assertThat(optional1.get()).isEqualTo(employee);
+        assertThat(employeeUpperCaseRef).isNotNull();
+        assertThat(employeeUpperCaseRef).isEqualTo(employee);
     }
 
     @Test
@@ -81,10 +87,12 @@ public class EmployeeRepositoryTest {
         assertThat(payrolls.size()).isEqualTo(5);
 
         Employee savedEmployee1 = employeeRepository.findById(employee1.getId()).orElseThrow();
-        assertThat(savedEmployee1.getPayrolls().size()).isEqualTo(3);
+        List<Payroll> payrolls1 = savedEmployee1.getPayrolls();
+        assertThat(payrolls1.size()).isEqualTo(3);
 
         Employee savedEmployee2 = employeeRepository.findById(employee2.getId()).orElseThrow();
-        assertThat(savedEmployee2.getPayrolls().size()).isEqualTo(2);
+        List<Payroll> payrolls2 = savedEmployee2.getPayrolls();
+        assertThat(payrolls2.size()).isEqualTo(2);
     }
 
     @Test

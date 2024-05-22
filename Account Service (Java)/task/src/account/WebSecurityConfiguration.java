@@ -49,11 +49,13 @@ public class WebSecurityConfiguration {
                         .requestMatchers("/api/admin/user/**").hasRole("ADMINISTRATOR")
 
                         .requestMatchers(HttpMethod.GET, "/api/empl/payment").hasAnyRole("USER", "ACCOUNTANT")
-                        .requestMatchers(HttpMethod.POST, "/api/empl/payment").hasRole( "ACCOUNTANT")
-                        .requestMatchers(HttpMethod.PUT, "/api/empl/payment").hasRole( "ACCOUNTANT")
+                        .requestMatchers(HttpMethod.POST, "/api/empl/payment").hasRole("ACCOUNTANT")
+                        .requestMatchers(HttpMethod.PUT, "/api/empl/payment").hasRole("ACCOUNTANT")
 
                         .requestMatchers(HttpMethod.POST, "/api/auth/signup").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/acct/payments").permitAll()
+
+                        .requestMatchers("/api/security/events").hasRole("AUDITOR")
 
                         .requestMatchers(HttpMethod.POST, "/actuator/shutdown").permitAll()
 
