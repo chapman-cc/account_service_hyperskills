@@ -32,9 +32,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc(addFilters = false)
-class BusinessControllerTest {
-
-
+class PayrollControllerTest {
     @MockBean
     private PayrollService payrollService;
 

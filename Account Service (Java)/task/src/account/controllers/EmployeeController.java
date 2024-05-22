@@ -21,12 +21,12 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/admin/user")
 @Validated
-public class ServiceController {
+public class EmployeeController {
 
     private final EmployeeService employeeService;
 
     @Autowired
-    public ServiceController(EmployeeService employeeService) {
+    public EmployeeController(EmployeeService employeeService) {
         this.employeeService = employeeService;
     }
 

@@ -41,7 +41,6 @@ public class WebSecurityConfiguration {
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(PathRequest.toH2Console()).permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/hello-world").permitAll()
 
                         .requestMatchers(HttpMethod.POST, "/api/acct/payments").permitAll()
                         .requestMatchers(HttpMethod.PUT, "/api/acct/payments").permitAll()

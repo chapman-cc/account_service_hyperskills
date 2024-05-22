@@ -20,18 +20,13 @@ import java.util.List;
 @RestController
 @RequestMapping("/api")
 @Validated
-public class BusinessController {
+public class PayrollController {
 
     private final PayrollService payrollService;
 
     @Autowired
-    public BusinessController(PayrollService payrollService) {
+    public PayrollController(PayrollService payrollService) {
         this.payrollService = payrollService;
-    }
-
-    @GetMapping("/hello-world")
-    public String helloWorld() {
-        return "Hello World!";
     }
 
     @GetMapping("/empl/payment")
